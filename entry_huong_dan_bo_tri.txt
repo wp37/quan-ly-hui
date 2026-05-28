@@ -1,0 +1,64 @@
+================================================================================
+          TÀI LIỆU BẢN GHI BỐ TRÍ CÁC NÚT MỚI & HƯỚNG DẪN TẢI BÁO CÁO HỤI
+================================================================================
+(Tài liệu thiết kế cấu trúc bố trí nút tải báo cáo ngay kế bên dây hụi)
+
+Phần mềm Quản lý Hụi Chủ Thảo đã được nâng cấp thành công các tính năng xuất file
+lưu trữ chuẩn Excel (.csv) và đóng tiền nhanh thời gian thực theo yêu cầu của bạn. 
+
+Dưới đây là sơ đồ bố trí các nút mới và hướng dẫn sử dụng:
+
+--------------------------------------------------------------------------------
+1. BỐ TRÍ NÚT TẢI BÁO CÁO KẾ BÊN TÊN DÂY HỤI (TẠI TRANG CHỦ)
+--------------------------------------------------------------------------------
+- Trên mỗi thẻ dây hụi ở trang chủ, nút Tải Báo Cáo được thiết kế đẹp mắt dạng
+  icon [📥] nằm ngay kế bên TÊN DÂY HỤI.
+- Định dạng sơ đồ bố trí:
+  +------------------------------------------------------------------------+
+  |  [TÊN DÂY HỤI]  -->  [📥 (Nút xuất Excel)]                     [ > ]   |
+  |  Bắt đầu: 2026-05-28                                                   |
+  |  --------------------------------------------------------------------  |
+  |  Số tiền kỳ: 2.000.000 đ                              Tiến độ: Kỳ 3/20  |
+  +------------------------------------------------------------------------+
+
+- Tác dụng: Khi bạn bấm vào nút [📥] kế bên tên dây hụi, phần mềm sẽ tự động kết
+  xuất toàn bộ lịch sử đóng hụi, thông tin người hốt hụi của TỪNG KỲ từ trước
+  đến nay thành một file Excel chuẩn (.csv) chia cột rõ ràng và tải ngay về máy.
+- Ưu điểm: Đã tích hợp chống xung đột sự kiện (stopPropagation). Bấm nút tải file
+  sẽ tải ngay lập tức mà KHÔNG bị nhảy vào màn hình chi tiết dây hụi.
+
+--------------------------------------------------------------------------------
+2. BỐ TRÍ HÀNG NÚT HÀNH ĐỘNG MỚI (TẠI TRANG CHI TIẾT DÂY HỤI)
+--------------------------------------------------------------------------------
+- Nằm ngay dưới nút màu cam "Khai Kỳ Mới (Khui Hụi)" và ngay trên phần
+  "Danh sách hụi viên".
+- Được chia thành 2 nút bấm tràn viền sang trọng nằm song song nhau:
+  +---------------------------------------+--------------------------------+
+  |  [ Đóng Nhanh Tất Cả ] (Màu xanh lá)  |  [ Tải Báo Cáo Kỳ ] (Màu xanh) |
+  +---------------------------------------+--------------------------------+
+
+- Nút [ Đóng Nhanh Tất Cả ]: Tự động đóng tiền nhanh cho tất cả các hụi viên
+  chưa đóng trong kỳ hiện tại bằng một chạm. Nó tự tính toán tiền sống/chết
+  và ghi lại chính xác GIỜ PHÚT GIÂY thời gian thực mà bạn bấm nút để làm chứng
+  cứ sau này.
+- Nút [ Tải Báo Cáo Kỳ ]: Kết xuất tình hình thu gom tiền của riêng kỳ hiện tại
+  dưới dạng file Excel (.csv) để bạn lưu lại, thống kê ai đã đóng, ai chưa đóng cực kỳ thuận tiện.
+
+--------------------------------------------------------------------------------
+3. THÔNG TIN LƯU TRỮ FILE TẢI VỀ (CHUẨN EXCEL BẢO ĐẢM 100% KHÔNG LỖI FONT)
+--------------------------------------------------------------------------------
+- Các file tải về là file Excel (.csv) đặc biệt sử dụng chuẩn mã hóa cao cấp
+  UTF-16 LE kèm ký hiệu BOM (FF FE) mức byte.
+- Định dạng này được Microsoft Excel trên Windows hỗ trợ tốt nhất, đảm bảo hiển thị
+  tiếng Việt có dấu chính xác 100% (chữ không bao giờ bị méo hay biến dạng).
+- Sử dụng dấu phân cách Tab (\t) kết hợp với UTF-16 LE giúp Excel tự động chia các ô
+  cột thẳng hàng cực đẹp ngay khi nhấp đúp mở file, bất kể cài đặt vùng của máy tính.
+- Giá trị số (số tiền, giá thầu...) được ghi dưới dạng số nguyên thuần túy (không chứa
+  ký tự dấu chấm hay chữ "đ") giúp bạn dễ dàng viết các hàm tính toán như =SUM(),
+  =AVERAGE() trực tiếp trên Excel.
+- Tên file tự động đặt thông minh:
+  + File lịch sử toàn bộ dây: TinhTrangDongHui_[Tên_Dây]_[Ngày_Tải].csv
+  + File báo cáo kỳ này: BaoCaoKy_[Kỳ]_[Tên_Dây]_[Ngày_Tải].csv
+
+Tài liệu được thiết kế và cập nhật bởi Trợ lý AI Antigravity.
+================================================================================

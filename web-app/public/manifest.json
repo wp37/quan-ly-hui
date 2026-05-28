@@ -1,0 +1,30 @@
+{
+  "short_name": "Quản Lý Hụi",
+  "name": "Phần Mềm Quản Lý Hụi Chủ Thảo",
+  "description": "Hệ thống quản lý hụi thời gian thực chuyên nghiệp cho chủ thảo",
+  "start_url": "/",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19",
+  "dir": "ltr",
+  "display": "standalone",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,2766 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phần Mềm Quản Lý Hụi Chủ Thảo</title>
+  <!-- Nhúng font chữ Inter cao cấp từ Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    // Bẫy lỗi toàn cục (Global Error Boundary) để phát hiện và báo lỗi trực quan trên màn hình
+    window.onerror = function(message, source, lineno, colno, error) {
+      setTimeout(function() {
+        var overlay = document.getElementById('error-boundary-overlay');
+        var msgPre = document.getElementById('error-boundary-message');
+        var agentPre = document.getElementById('error-boundary-agent');
+        if (overlay && msgPre && agentPre) {
+          overlay.style.display = 'block';
+          msgPre.innerText = message + '\n\nTại: ' + source + '\nDòng: ' + lineno + ', Cột: ' + colno + '\n\nStack: ' + (error ? error.stack : 'N/A');
+          agentPre.innerText = navigator.userAgent;
+        }
+      }, 100);
+      return false; 
+    };
+  </script>
+  
+  <style>
+    /* -------------------------------------------------------------
+       HỆ THỐNG MÀU SẮC & GIAO DIỆN PREMIUM DARK OBSIDIAN (VANILLA CSS)
+       ------------------------------------------------------------- */
+    :root {
+      --bg-dark: #0B0F19;
+      --card-bg: #151E33;
+      --card-border: #233256;
+      --primary: #6366F1;
+      --primary-hover: #4F46E5;
+      --success: #10B981;
+      --success-bg: rgba(16, 185, 129, 0.12);
+      --warning: #F59E0B;
+      --warning-bg: rgba(245, 158, 11, 0.12);
+      --danger: #EF4444;
+      --text-main: #F3F4F6;
+      --text-muted: #9CA3AF;
+      --text-dark: #6B7280;
+      --font-family: 'Inter', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.5;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Khung ứng dụng giả lập điện thoại trên PC, full màn hình trên Mobile */
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background-color: #0D1324;
+      min-height: 100vh;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      border-left: 1px solid #1E293B;
+      border-right: 1px solid #1E293B;
+    }
+
+    header {
+      padding: 24px 20px 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-info h2 {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 2px;
+    }
+
+    .header-info h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .btn-add {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-add:hover {
+      background-color: var(--primary-hover);
+      transform: scale(1.05);
+    }
+
+    .btn-add:active {
+      transform: scale(0.95);
+    }
+
+    /* -------------------------------------------------------------
+       DASHBOARD CARD
+       ------------------------------------------------------------- */
+    .dashboard-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 20px;
+      margin: 0 20px 20px 20px;
+    }
+
+    .db-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .db-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background-color: rgba(16, 185, 129, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .db-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .db-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--success);
+      letter-spacing: -0.5px;
+    }
+
+    .db-sub {
+      font-size: 11px;
+      color: var(--text-dark);
+      margin-top: 4px;
+    }
+
+    .db-divider {
+      height: 1px;
+      background-color: var(--card-border);
+      margin: 16px 0;
+    }
+
+    .db-stats {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .db-stat-col {
+      flex: 1;
+    }
+
+    .db-stat-num {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .db-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* -------------------------------------------------------------
+       TAB BAR CONTROL
+       ------------------------------------------------------------- */
+    .tab-container {
+      display: flex;
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 5px;
+      margin: 0 20px 20px 20px;
+    }
+
+    .tab-button {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 0;
+      border: none;
+      background: none;
+      border-radius: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-family);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-button.active {
+      background-color: #1E293B;
+      color: #fff;
+    }
+
+    .tab-badge {
+      background-color: #374151;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .tab-button.active .tab-badge {
+      background-color: var(--primary);
+    }
+
+    /* -------------------------------------------------------------
+       SAVING LINE LIST
+       ------------------------------------------------------------- */
+    .scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 20px 30px 20px;
+    }
+
+    .day-hui-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .day-hui-card:hover {
+      border-color: #3b4f80;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-date-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card-date-row svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .chevron {
+      color: var(--primary);
+      width: 20px;
+      height: 20px;
+    }
+
+    .card-divider {
+      height: 1px;
+      background-color: var(--card-border);
+      margin: 12px 0;
+    }
+
+    .card-metrics {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .metric-col {
+      flex: 1;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-dark);
+      margin-bottom: 2px;
+    }
+
+    .metric-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .progress-bar-container {
+      margin-top: 12px;
+    }
+
+    .progress-bar-bg {
+      height: 6px;
+      background-color: var(--card-border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--primary);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    /* -------------------------------------------------------------
+       DETAIL VIEW SCREEN
+       ------------------------------------------------------------- */
+    .screen {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .screen.active {
+      display: flex;
+    }
+
+    .detail-header {
+      padding: 18px 16px;
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-back {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .btn-back:hover {
+      background-color: #1e293b;
+    }
+
+    .detail-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .detail-info-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .detail-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .detail-info-col h3 {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: 500;
+    }
+
+    .detail-info-col p {
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .detail-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background-color: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+    }
+
+    .btn-khui {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background-color: var(--warning);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 14px;
+      font-family: var(--font-family);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+      margin-bottom: 24px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-khui:hover {
+      background-color: #d97706;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* -------------------------------------------------------------
+       HỘI VIÊN CARD
+       ------------------------------------------------------------- */
+    .hv-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: opacity 0.2s ease;
+    }
+
+    .hv-card.hotted {
+      border-color: #1E293B;
+      opacity: 0.85;
+    }
+
+    .hv-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .hv-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--success-bg);
+      color: var(--success);
+    }
+
+    .hv-card.hotted .hv-avatar {
+      background-color: #1F2937;
+      color: var(--text-muted);
+    }
+
+    .hv-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .hv-card.hotted .hv-name {
+      color: var(--text-muted);
+      text-decoration: line-through;
+    }
+
+    .hv-badges {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      margin-top: 2px;
+    }
+
+    .mini-badge {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background-color: rgba(107, 114, 128, 0.15);
+      color: var(--text-muted);
+    }
+
+    .mini-badge.live {
+      background-color: var(--success-bg);
+      color: var(--success);
+    }
+
+    .mini-badge.winner {
+      background-color: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .hv-card-right {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .hv-amount {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .hv-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-zalo {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background-color: var(--success-bg);
+      border: none;
+      color: var(--success);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-zalo:hover {
+      background-color: rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-pay {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-family: var(--font-family);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-pay.todo {
+      background-color: rgba(75, 85, 99, 0.2);
+      color: var(--text-muted);
+    }
+
+    .btn-pay.done {
+      background-color: var(--success);
+      color: #fff;
+    }
+
+    /* -------------------------------------------------------------
+       MODAL POPUPS
+       ------------------------------------------------------------- */
+    .modal-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: flex-end;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background-color: #0F172A;
+      border-top-left-radius: 28px;
+      border-top-right-radius: 28px;
+      padding: 24px 20px 40px 20px;
+      max-height: 85%;
+      overflow-y: auto;
+      border-top: 1px solid #1E293B;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1E293B;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .btn-close {
+      background: rgba(255, 255, 255, 0.06);
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-close:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      transform: rotate(90deg);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      background-color: #1E293B;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #fff;
+      font-family: var(--font-family);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .type-selector-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .type-selector-btn {
+      flex: 1;
+      background-color: #1E293B;
+      border: 1px solid #334155;
+      padding: 10px;
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-family: var(--font-family);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .type-selector-btn.active {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .picker-container {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .picker-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .picker-item.active {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .preview-box {
+      background-color: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    .preview-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--warning);
+    }
+
+    .preview-value {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--warning);
+      margin-top: 4px;
+    }
+
+    .preview-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background-color: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 14px;
+      font-family: var(--font-family);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 16px;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-submit.btn-warning-theme {
+      background-color: var(--warning);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    }
+
+    /* CSS NÚT BẤM VÀ BỐ TRÍ NÚT MỚI */
+    .btn-card-action {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: var(--primary);
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .btn-card-action:hover {
+      background: var(--primary) !important;
+      color: #fff !important;
+      border-color: var(--primary) !important;
+      transform: scale(1.1);
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
+    }
+
+    .detail-actions-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .btn-detail-action {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: none;
+      font-family: var(--font-family);
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-detail-action.btn-success-theme {
+      background-color: var(--success);
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+    }
+    .btn-detail-action.btn-success-theme:hover {
+      background-color: #059669;
+      transform: translateY(-2px);
+    }
+    .btn-detail-action.btn-primary-theme {
+      background-color: var(--primary);
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2);
+    }
+    .btn-detail-action.btn-primary-theme:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    /* -------------------------------------------------------------
+       UTILS & TOAST
+       ------------------------------------------------------------- */
+    .empty-box {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--text-dark);
+    }
+
+    .empty-box svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 10px;
+    }
+
+    .toast {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #1F2937;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px 24px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: none;
+      white-space: nowrap;
+    }
+
+    .backup-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 0 20px 10px 20px;
+    }
+
+    .btn-backup {
+      background: none;
+      border: none;
+      color: var(--text-dark);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-backup:hover {
+      color: var(--text-muted);
+    }
+
+    /* -------------------------------------------------------------
+       SVG ICONS FALLBACK FOR WEB (NO DEPENDENCIES)
+       ------------------------------------------------------------- */
+    .svg-icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    /* -------------------------------------------------------------
+       THIẾT LẬP IN ẤN BIÊN NHẬN (PRINT RECEIPT ONLY)
+       ------------------------------------------------------------- */
+    @media print {
+      body * {
+        visibility: hidden !important;
+      }
+      #modal-receipt, #modal-receipt * {
+        visibility: visible !important;
+      }
+      #modal-receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100vw;
+        height: 100vh;
+        background: #fff !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        padding-top: 20px !important;
+        z-index: 99999 !important;
+      }
+      .modal-content {
+        box-shadow: none !important;
+        border: none !important;
+        background: #fff !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
+      #receipt-print-area {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 10px !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 480px !important;
+      }
+      .modal-header, .btn-submit {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- GLOBAL ERROR BOUNDARY OVERLAY -->
+  <div id="error-boundary-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); color: #ef4444; z-index: 99999; padding: 30px; font-family: monospace; overflow-y: auto; box-sizing: border-box;">
+    <h1 style="font-size: 22px; margin-bottom: 15px; color: #fff; display: flex; align-items: center; gap: 10px;">⚠️ Lỗi Khởi Chạy Ứng Dụng</h1>
+    <p style="color: #9ca3af; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">Ứng dụng gặp lỗi kỹ thuật khi tải dữ liệu. Vui lòng chụp ảnh màn hình này gửi lập trình viên hoặc bấm nút <strong>"Xóa dữ liệu bị lỗi"</strong> để cài đặt lại mặc định:</p>
+    <div style="background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 20px;">
+      <strong style="color: #f3f4f6;">Chi tiết lỗi (Error Details):</strong>
+      <pre id="error-boundary-message" style="white-space: pre-wrap; margin-top: 10px; font-size: 13px; color: #f43f5e; line-height: 1.5;"></pre>
+    </div>
+    <div style="background: #1e293b; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 20px;">
+      <strong style="color: #f3f4f6;">Môi trường (User Agent):</strong>
+      <pre id="error-boundary-agent" style="white-space: pre-wrap; margin-top: 8px; font-size: 11px; color: #9ca3af;"></pre>
+    </div>
+    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+      <button onclick="location.reload()" style="padding: 12px 24px; background: #6366f1; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; transition: background 0.2s;">Tải lại trang (Reload)</button>
+      <button onclick="if(confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu bị lỗi? Thao tác này sẽ reset ứng dụng về trạng thái ban đầu.')) { localStorage.clear(); location.reload(); }" style="padding: 12px 24px; background: #ef4444; border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; transition: background 0.2s;">Xóa dữ liệu bị lỗi (Reset)</button>
+    </div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast">Đã sao chép tin nhắn nhắc nhở!</div>
+
+    <!-- ==========================================
+         SCREEN 1: TRANG CHỦ (DANH SÁCH DÂY HỤI)
+         ========================================== -->
+    <div id="screen-home" class="screen active">
+      <header>
+        <div class="header-info">
+          <h2>Phần Mềm Chủ Thảo</h2>
+          <h1>Quản Lý Hụi</h1>
+        </div>
+        <button class="btn-add" onclick="openAddHuiModal()">+</button>
+      </header>
+
+      <!-- Khối tài chính -->
+      <div class="dashboard-card">
+        <div class="db-header">
+          <div class="db-icon">
+            <svg class="svg-icon" style="color: var(--success);" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"></path><path d="M17 6h6v6"></path></svg>
+          </div>
+          <div class="db-title">Doanh Thu Chủ Thảo (Tích Lũy)</div>
+        </div>
+        <div class="db-value" id="db-commission-collected">0đ</div>
+        <div class="db-sub">Tổng tiền thảo (hoa hồng) đã thu từ các kỳ khui</div>
+        
+        <div class="db-divider"></div>
+        
+        <div class="db-stats">
+          <div class="db-stat-col">
+            <div class="db-stat-num" id="db-total-lines">0</div>
+            <div class="db-stat-label">Tổng số dây hụi</div>
+          </div>
+          <div class="db-stat-col">
+            <div class="db-stat-num" id="db-active-lines">0</div>
+            <div class="db-stat-label">Dây đang chạy</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sao lưu & Khôi phục dữ liệu dự phòng -->
+      <div class="backup-row">
+        <button class="btn-backup" onclick="exportData()">
+          <svg class="svg-icon" style="width:12px;height:12px" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          Xuất dữ liệu dự phòng
+        </button>
+        <button class="btn-backup" onclick="importData()">
+          <svg class="svg-icon" style="width:12px;height:12px" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Nạp file dữ liệu
+        </button>
+        <input type="file" id="import-file-input" style="display: none;" onchange="handleImportFile(event)">
+      </div>
+
+      <!-- Tab bar quản lý -->
+      <div class="tab-container">
+        <button class="tab-button" id="tab-daily" onclick="switchTab('daily')">
+          Hụi Ngày <span class="tab-badge" id="badge-daily">0</span>
+        </button>
+        <button class="tab-button active" id="tab-weekly" onclick="switchTab('weekly')">
+          Hụi Tuần <span class="tab-badge" id="badge-weekly">0</span>
+        </button>
+        <button class="tab-button" id="tab-monthly" onclick="switchTab('monthly')">
+          Hụi Tháng <span class="tab-badge" id="badge-monthly">0</span>
+        </button>
+      </div>
+
+      <!-- List Danh Sách dây hụi -->
+      <div class="scroll-area" id="hui-cards-list">
+        <!-- Javascript tự động điền thẻ vào đây -->
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SCREEN 2: CHI TIẾT MỘT DÂY HỤI
+         ========================================== -->
+    <div id="screen-detail" class="screen">
+      <div class="detail-header">
+        <button class="btn-back" onclick="goHome()">
+          <svg class="svg-icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <span class="detail-title" id="detail-hui-title">Chi Tiết Dây Hụi</span>
+        <div style="width: 28px;"></div>
+      </div>
+
+      <div class="scroll-area" style="padding-top: 20px;">
+        
+        <!-- Khối Info Tổng Quan -->
+        <div class="detail-info-card">
+          <div class="detail-info-row">
+            <div class="detail-info-col">
+              <h3>Số tiền một kỳ</h3>
+              <p id="detail-ky-amount">0đ</p>
+            </div>
+            <div class="detail-info-col" style="text-align: right;">
+              <h3>Kỳ hiện tại</h3>
+              <p style="color: var(--warning);" id="detail-current-ky">Kỳ 0/0</p>
+            </div>
+          </div>
+          
+          <div class="db-divider" style="margin: 12px 0;"></div>
+          
+          <div class="detail-info-row">
+            <div class="detail-info-col">
+              <h3>Tiền thảo/kỳ</h3>
+              <p id="detail-commission-amount" style="font-size: 14px; font-weight:600;">0đ</p>
+            </div>
+            <div class="detail-info-col" style="text-align: right;">
+              <span class="detail-badge" id="detail-status-badge">Đang chạy</span>
+            </div>
+          </div>
+
+          <div class="progress-bar-container" style="margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
+              <span style="color: var(--text-dark);">Tiến độ dây hụi</span>
+              <span style="color: #fff; font-weight: 700;" id="detail-progress-percent">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="detail-progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nút khai kỳ mới (Khui hụi) -->
+        <button class="btn-khui" id="btn-khui-ky-moi" onclick="openKhuiHuiModal()">
+          <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          Khai Kỳ Mới (Khui Hụi)
+        </button>
+
+        <!-- Hàng nút hành động bổ sung của kỳ hiện tại -->
+        <div class="detail-actions-row" id="detail-actions-row">
+          <button class="btn-detail-action btn-success-theme" id="btn-pay-all" onclick="markAllPaidCurrentRound()">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Đóng Nhanh Tất Cả
+          </button>
+          <button class="btn-detail-action btn-primary-theme" id="btn-download-round" onclick="downloadRoundReport()">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 14px; height: 14px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Tải Báo Cáo Kỳ
+          </button>
+        </div>
+
+        <!-- Danh sách hụi viên -->
+        <div class="section-header">
+          <svg class="svg-icon" style="color: var(--primary);" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span class="section-title" id="section-members-title">Danh sách hụi viên</span>
+        </div>
+
+        <div id="members-list-container">
+          <!-- Javascript tự động điền danh sách hụi viên vào đây -->
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL 1: THÊM DÂY HỤI MỚI
+         ========================================== -->
+    <div id="modal-add-hui" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">Tạo Dây Hụi Mới</span>
+          <button class="btn-close" onclick="closeAddHuiModal()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Tên dây hụi:</label>
+          <input type="text" id="add-hui-name" class="form-input" placeholder="Ví dụ: Dây hụi 1 triệu Bà Tám">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Số tiền kỳ (VND):</label>
+          <input type="text" inputmode="numeric" id="add-hui-amount" class="form-input" placeholder="Ví dụ: 1.000.000" oninput="formatNumberInput(this)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Loại dây hụi (Chu kỳ):</label>
+          <div class="type-selector-row">
+            <button class="type-selector-btn" id="selector-daily" onclick="setNewHuiType('daily')">Ngày</button>
+            <button class="type-selector-btn active" id="selector-weekly" onclick="setNewHuiType('weekly')">Tuần</button>
+            <button class="type-selector-btn" id="selector-monthly" onclick="setNewHuiType('monthly')">Tháng</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Danh sách hụi viên:</label>
+          <div class="type-selector-row" style="margin-bottom: 10px;">
+            <button class="type-selector-btn active" id="member-mode-auto" onclick="setMemberInputMode('auto')" type="button" style="font-size:12px; padding: 6px;">Tự sinh tên</button>
+            <button class="type-selector-btn" id="member-mode-paste" onclick="setMemberInputMode('paste')" type="button" style="font-size:12px; padding: 6px;">Dán từ Excel/Word</button>
+          </div>
+          
+          <!-- Mode 1: Tự động sinh hội viên -->
+          <div id="member-input-auto-container">
+            <input type="number" id="add-hui-shares" class="form-input" placeholder="Nhập tổng số phần (Ví dụ: 10)">
+          </div>
+          
+          <!-- Mode 2: Dán văn bản từ Excel/Word hoặc nạp file -->
+          <div id="member-input-paste-container" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 11px; color: var(--text-muted);">Dán từ Excel/Word hoặc tải file (.csv, .txt):</span>
+              <button class="btn-backup" onclick="document.getElementById('add-hui-file-input').click()" type="button" style="padding: 4px 8px; background: var(--card-border); border-radius: 6px; border: none; cursor: pointer; color: var(--text-main);">
+                Chọn tệp (.csv/.txt)
+              </button>
+              <input type="file" id="add-hui-file-input" style="display: none;" accept=".csv,.txt" onchange="handleMemberImportFile(event)">
+            </div>
+            <textarea id="add-hui-member-paste" class="form-input" style="height: 110px; font-family: monospace; font-size: 11px; resize: vertical; line-height: 1.4;" placeholder="Cách 1: Nhập tên mỗi dòng một người:&#10;Chị Lan Bún Nước&#10;Anh Hùng Xe Ôm&#10;&#10;Cách 2: Quét bảng Excel (Tên, SĐT, Số phần) rồi dán:&#10;Chị Lan Bún Nước	0901112223	1&#10;Anh Hùng Xe Ôm	0903334445	2" oninput="updateMemberPastePreview()"></textarea>
+            <div id="member-paste-preview" style="font-size: 11px; color: var(--warning); margin-top: 6px; font-weight: 600;">Phát hiện: 0 hội viên - Tổng cộng: 0 phần hụi</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Tiền thảo chủ thảo thu mỗi kỳ (VND):</label>
+          <input type="text" inputmode="numeric" id="add-hui-commission" class="form-input" placeholder="Ví dụ: 200.000" oninput="formatNumberInput(this)">
+        </div>
+
+        <button class="btn-submit" onclick="submitCreateHui()">Tạo Dây Hụi Mới</button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL 2: KHAI KỲ MỚI (KHUI HỤI)
+         ========================================== -->
+    <div id="modal-khui-hui" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title" id="khui-modal-title">Khai Kỳ Hụi</span>
+          <button class="btn-close" onclick="closeKhuiHuiModal()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Chọn người hốt hụi kỳ này:</label>
+          <div class="picker-container" id="khui-picker-container">
+            <!-- Tải danh sách hụi viên chưa hốt hụi -->
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Giá thầu khui hụi bỏ thầu (VND):</label>
+          <input type="text" inputmode="numeric" id="khui-bid-amount" class="form-input" placeholder="Ví dụ: 150.000" oninput="formatNumberInput(this); updateKhuiPreview()">
+        </div>
+
+        <!-- Khối xem trước tiền nhận thực tế -->
+        <div class="preview-box" id="khui-preview-box" style="display: none;">
+          <div class="preview-title">Dự kiến tiền nhận thực tế:</div>
+          <div class="preview-value" id="khui-preview-value">0đ</div>
+          <div class="preview-sub" id="khui-preview-sub">(Đã trừ tiền thảo chủ hụi)</div>
+        </div>
+
+        <button class="btn-submit btn-warning-theme" onclick="submitKhuiHui()">Xác Nhận Khui Hụi</button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL 3: BIÊN NHẬN GIAO HỤI (PRINT & SHARE)
+         ========================================== -->
+    <div id="modal-receipt" class="modal-overlay">
+      <div class="modal-content" style="background-color: #0F172A; max-width: 440px; margin: 0 auto;">
+        <div class="modal-header">
+          <span class="modal-title">🧾 Biên Nhận Giao Hụi</span>
+          <button class="btn-close" onclick="closeReceiptModal()">
+            <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        
+        <!-- Giao diện phiếu giấy biên nhận -->
+        <div id="receipt-print-area" style="background: #ffffff; color: #000000; padding: 20px; border-radius: 12px; font-family: 'Courier New', Courier, monospace; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 20px; line-height: 1.4; border: 1px dashed #cbd5e1;">
+          <div style="text-align: center; border-bottom: 2px dashed #000; padding-bottom: 12px; margin-bottom: 16px;">
+            <h2 style="font-size: 18px; font-weight: 800; text-transform: uppercase; margin: 0 0 4px 0; color: #000;">BIÊN NHẬN GIAO HỤI</h2>
+            <div style="font-size: 11px; color: #475569;" id="receipt-date">Ngày khui: 2026-05-29</div>
+          </div>
+          
+          <div style="font-size: 12px; margin-bottom: 12px;">
+            <div style="margin-bottom: 3px;"><strong>Dây hụi:</strong> <span id="receipt-line-name">Dây hụi 1 Triệu</span></div>
+            <div style="margin-bottom: 3px;"><strong>Kỳ khui:</strong> Kỳ thứ <span id="receipt-ky">1</span></div>
+            <div style="margin-bottom: 3px;"><strong>Người hốt:</strong> <span id="receipt-winner-name">Chị Lan Bún Nước</span></div>
+            <div id="receipt-winner-phone" style="margin-bottom: 3px;"><strong>Số điện thoại:</strong> 0901112223</div>
+            <div style="margin-bottom: 3px;"><strong>Mức thầu khui:</strong> <span id="receipt-bid-value">150.000đ</span></div>
+          </div>
+          
+          <div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 8px 0; margin-bottom: 12px; font-size: 11px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>Hụi chết (<span id="receipt-dead-shares">0</span> phần):</span>
+              <span id="receipt-dead-sum">0đ</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <span>Hụi sống (<span id="receipt-live-shares">0</span> phần):</span>
+              <span id="receipt-live-sum">0đ</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-top: 4px; border-top: 1px dotted #000; padding-top: 4px;">
+              <span>Tổng cộng gom:</span>
+              <span id="receipt-gross-sum">0đ</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #dc2626; margin-top: 4px;">
+              <span>Trừ tiền thảo:</span>
+              <span id="receipt-commission-sum">-0đ</span>
+            </div>
+          </div>
+          
+          <div style="text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px;">
+            <div style="font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b;">THỰC NHẬN (CÒN LẠI)</div>
+            <div style="font-size: 20px; font-weight: 800; color: #10b981; margin-top: 4px;" id="receipt-net-sum">0đ</div>
+          </div>
+          
+          <div style="text-align: center; margin-top: 16px; font-size: 9px; color: #64748b; border-top: 1px dashed #000; padding-top: 12px; font-style: italic;">
+            Cảm ơn Anh/Chị đã tham gia dây hụi!<br>Chúc dây hụi luôn suôn sẻ và may mắn!
+          </div>
+        </div>
+        
+        <!-- Các nút hành động -->
+        <div style="display: flex; gap: 12px;">
+          <button class="btn-submit" onclick="copyReceiptText()" style="margin-top: 0; background-color: var(--success); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25); display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1;">
+            <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+            Gửi Zalo (Copy)
+          </button>
+          <button class="btn-submit" onclick="printReceipt()" style="margin-top: 0; background-color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1;">
+            <svg class="svg-icon" style="width:16px;height:16px;" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            In Biên Nhận
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  </div>
+
+  <!-- ==========================================
+       LOGIC JAVASCRIPT & MÔ HÌNH HỤI
+       ========================================== -->
+  <script>
+    // Safe storage wrapper để tránh lỗi trên giao thức file:// hoặc khi trình duyệt tắt Cookie/Storage
+    const safeStorage = {
+      getItem: function(key) {
+        try {
+          return localStorage.getItem(key);
+        } catch (e) {
+          console.warn("localStorage is blocked or unavailable:", e);
+          return this._memoryStore[key] || null;
+        }
+      },
+      setItem: function(key, value) {
+        try {
+          localStorage.setItem(key, value);
+        } catch (e) {
+          console.warn("localStorage is blocked or unavailable:", e);
+          this._memoryStore[key] = String(value);
+        }
+      },
+      clear: function() {
+        try {
+          localStorage.clear();
+        } catch (e) {
+          this._memoryStore = {};
+        }
+      },
+      _memoryStore: {}
+    };
+
+    // Dữ liệu giả lập mẫu khi khởi tạo ứng dụng lần đầu
+    const initialHuiData = [
+      {
+        id: "day_hui_001",
+        ten_day: "Dây Hụi 1 Triệu - Thứ Sáu Vui Vẻ",
+        so_tien_ky: 1000000,
+        loai_hui: "weekly",
+        ngay_bat_dau: "2026-05-01",
+        tong_so_phan: 10,
+        ky_hien_tai: 3,
+        trang_thai: "active",
+        tien_thao_moi_ky: 200000,
+        hui_vien: [
+          {
+            id: "hv_01",
+            ten: "Chị Hoa Mai",
+            sdt: "0909123456",
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: true,
+              ky_hot: 1,
+              gia_hot: 100000,
+              ngay_hot: "2026-05-01",
+              tien_nhan_thuc_te: 7800000
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: true, so_tien_da_dong: 1000000, ngay_dong: "2026-05-01" },
+              { ky: 2, da_dong: true, so_tien_da_dong: 1000000, ngay_dong: "2026-05-08" },
+              { ky: 3, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+            ]
+          },
+          {
+            id: "hv_02",
+            ten: "Anh Tuấn Anh",
+            sdt: "0988777666",
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: false,
+              ky_hot: null,
+              gia_hot: 0,
+              ngay_hot: null,
+              tien_nhan_thuc_te: 0
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: true, so_tien_da_dong: 900000, ngay_dong: "2026-05-02" },
+              { ky: 2, da_dong: true, so_tien_da_dong: 850000, ngay_dong: "2026-05-09" },
+              { ky: 3, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+            ]
+          },
+          {
+            id: "hv_03",
+            ten: "Cô Ba Bến Tre",
+            sdt: "0912345678",
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: true,
+              ky_hot: 2,
+              gia_hot: 150000,
+              ngay_hot: "2026-05-08",
+              tien_nhan_thuc_te: 7650000
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: true, so_tien_da_dong: 900000, ngay_dong: "2026-05-01" },
+              { ky: 2, da_dong: true, so_tien_da_dong: 1000000, ngay_dong: "2026-05-08" },
+              { ky: 3, da_dong: true, so_tien_da_dong: 1000000, ngay_dong: "2026-05-15" }
+            ]
+          },
+          {
+            id: "hv_04",
+            ten: "Dì Út Chợ Lách",
+            sdt: "0934567890",
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: false,
+              ky_hot: null,
+              gia_hot: 0,
+              ngay_hot: null,
+              tien_nhan_thuc_te: 0
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: true, so_tien_da_dong: 900000, ngay_dong: "2026-05-01" },
+              { ky: 2, da_dong: true, so_tien_da_dong: 850000, ngay_dong: "2026-05-08" },
+              { ky: 3, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+            ]
+          },
+          {
+            id: "hv_05",
+            ten: "Mợ Tư Cần Thơ",
+            sdt: "0977888999",
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: false,
+              ky_hot: null,
+              gia_hot: 0,
+              ngay_hot: null,
+              tien_nhan_thuc_te: 0
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: true, so_tien_da_dong: 900000, ngay_dong: "2026-05-01" },
+              { ky: 2, da_dong: true, so_tien_da_dong: 850000, ngay_dong: "2026-05-08" },
+              { ky: 3, da_dong: true, so_tien_da_dong: 850000, ngay_dong: "2026-05-15" }
+            ]
+          }
+        ]
+      },
+      {
+        id: "day_hui_002",
+        ten_day: "Hụi Ngày 200k Chợ Bình Tây",
+        so_tien_ky: 200000,
+        loai_hui: "daily",
+        ngay_bat_dau: "2026-05-20",
+        tong_so_phan: 15,
+        ky_hien_tai: 5,
+        trang_thai: "active",
+        tien_thao_moi_ky: 40000,
+        hui_vien: [
+          {
+            id: "hv_11",
+            ten: "Chị Lan Bún Nước",
+            sdt: "0901112223",
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: true,
+              ky_hot: 1,
+              gia_hot: 20000,
+              ngay_hot: "2026-05-20",
+              tien_nhan_thuc_te: 2760000
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: true, so_tien_da_dong: 200000, ngay_dong: "2026-05-20" },
+              { ky: 2, da_dong: true, so_tien_da_dong: 200000, ngay_dong: "2026-05-21" },
+              { ky: 3, da_dong: true, so_tien_da_dong: 200000, ngay_dong: "2026-05-22" },
+              { ky: 4, da_dong: true, so_tien_da_dong: 200000, ngay_dong: "2026-05-23" },
+              { ky: 5, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+            ]
+          },
+          {
+            id: "hv_12",
+            ten: "Anh Hùng Xe Ôm",
+            sdt: "0903334445",
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: false,
+              ky_hot: null,
+              gia_hot: 0,
+              ngay_hot: null,
+              tien_nhan_thuc_te: 0
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: true, so_tien_da_dong: 180000, ngay_dong: "2026-05-20" },
+              { ky: 2, da_dong: true, so_tien_da_dong: 175000, ngay_dong: "2026-05-21" },
+              { ky: 3, da_dong: true, so_tien_da_dong: 170000, ngay_dong: "2026-05-22" },
+              { ky: 4, da_dong: false, so_tien_da_dong: 0, ngay_dong: null },
+              { ky: 5, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // Trạng thái ứng dụng
+    let huiData = [];
+    let currentTab = 'weekly';
+    let selectedHuiId = null;
+    let newHuiType = 'weekly';
+    let selectedWinnerId = null;
+
+    // Định dạng tiền tệ
+    function formatMoney(amount) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount).replace(/₫/g, 'đ');
+    }
+
+    // Tự động định dạng số có dấu chấm phân cách hàng nghìn khi người dùng gõ
+    function formatNumberInput(input) {
+      let val = input.value.replace(/\D/g, "");
+      if (val === "") {
+        input.value = "";
+        return;
+      }
+      let formatted = new Intl.NumberFormat('vi-VN').format(parseInt(val));
+      input.value = formatted;
+    }
+
+    // Định dạng chuỗi ngày giờ đầy đủ (HH:MM ngày DD/MM/YYYY) làm bằng chứng đóng hụi
+    function formatDateTime(isoString) {
+      if (!isoString) return "";
+      try {
+        const d = new Date(isoString);
+        if (isNaN(d.getTime())) return isoString;
+        const time = d.toTimeString().split(' ')[0].substring(0, 5); // "HH:MM"
+        const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        return `${time} ngày ${date}`;
+      } catch (e) {
+        return isoString;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // KHỞI ĐỘNG ỨNG DỤNG & LOCALSTORAGE PERSISTENCE
+    // -------------------------------------------------------------
+    function initApp() {
+      try {
+        const stored = safeStorage.getItem('hui_data_chuthao');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              huiData = parsed;
+            } else {
+              huiData = initialHuiData;
+            }
+          } catch(e) {
+            huiData = initialHuiData;
+          }
+        } else {
+          huiData = initialHuiData;
+          saveToLocalStorage();
+        }
+        renderDashboard();
+        renderHuiCardsList();
+      } catch (globalInitError) {
+        console.error("Initialization failed:", globalInitError);
+        // Kích hoạt Error Boundary thủ công nếu lỗi xảy ra trong initApp
+        window.onerror(globalInitError.message, window.location.href, 0, 0, globalInitError);
+      }
+    }
+
+    function saveToLocalStorage() {
+      try {
+        safeStorage.setItem('hui_data_chuthao', JSON.stringify(huiData));
+      } catch (e) {
+        console.error("Save to localStorage failed:", e);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // TOÁN HỌC NGHIỆP VỤ HỤI (HỘT) CHUẨN XÁC
+    // -------------------------------------------------------------
+    
+    // Tính số tiền một hụi viên phải đóng tại một kỳ
+    function calculateTienPhaiDong(huiVien, dayHui, targetKy, giaThauKyNay = 0) {
+      const soTienKy = dayHui.so_tien_ky;
+      
+      // Hụi chết (đã hốt trước kỳ targetKy hoặc đang hốt kỳ này)
+      const daHotTruocKy = huiVien.trang_thai_hot.da_hot && huiVien.trang_thai_hot.ky_hot < targetKy;
+      const laNguoiHotKyNay = huiVien.trang_thai_hot.da_hot && huiVien.trang_thai_hot.ky_hot === targetKy;
+
+      if (daHotTruocKy || laNguoiHotKyNay) {
+        return soTienKy * huiVien.so_phan_mua;
+      }
+
+      // Hụi sống: Giảm trừ theo giá thầu khui của kỳ đó
+      let giaThauK = giaThauKyNay;
+      
+      if (targetKy < dayHui.ky_hien_tai) {
+        // Tìm giá thầu kỳ quá khứ
+        const winner = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === targetKy);
+        if (winner) {
+          giaThauK = winner.trang_thai_hot.gia_hot;
+        }
+      }
+
+      return Math.max(0, soTienKy - giaThauK) * huiVien.so_phan_mua;
+    }
+
+    // Tính tiền người hốt thực tế nhận được (Trừ đi tiền thảo)
+    function calculateTienNhanThucTe(dayHui, kyHot, giaHot) {
+      const { so_tien_ky, tong_so_phan, tien_thao_moi_ky } = dayHui;
+      const soPhanChet = kyHot - 1;
+      const soPhanSong = Math.max(0, tong_so_phan - soPhanChet - 1);
+
+      const thuChet = soPhanChet * so_tien_ky;
+      const thuSong = soPhanSong * Math.max(0, so_tien_ky - giaHot);
+
+      return Math.max(0, thuChet + thuSong - tien_thao_moi_ky);
+    }
+
+    // -------------------------------------------------------------
+    // HIỂN THỊ TRANG CHỦ & DASHBOARD
+    // -------------------------------------------------------------
+    function renderDashboard() {
+      // 1. Tính tổng tiền thảo đã thu
+      let totalCommission = 0;
+      let activeLines = 0;
+
+      huiData.forEach(item => {
+        totalCommission += (item.ky_hien_tai - 1) * item.tien_thao_moi_ky;
+        if (item.trang_thai === 'active') activeLines++;
+      });
+
+      document.getElementById('db-commission-collected').innerText = formatMoney(totalCommission);
+      document.getElementById('db-total-lines').innerText = huiData.length;
+      document.getElementById('db-active-lines').innerText = activeLines;
+
+      // 2. Cập nhật số đếm trên tab badges
+      const dailyCount = huiData.filter(i => i.loai_hui === 'daily').length;
+      const weeklyCount = huiData.filter(i => i.loai_hui === 'weekly').length;
+      const monthlyCount = huiData.filter(i => i.loai_hui === 'monthly').length;
+
+      document.getElementById('badge-daily').innerText = dailyCount;
+      document.getElementById('badge-weekly').innerText = weeklyCount;
+      document.getElementById('badge-monthly').innerText = monthlyCount;
+    }
+
+    function renderHuiCardsList() {
+      const container = document.getElementById('hui-cards-list');
+      container.innerHTML = '';
+
+      const filteredList = huiData.filter(item => item.loai_hui === currentTab);
+
+      if (filteredList.length === 0) {
+        container.innerHTML = `
+          <div class="empty-box">
+            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            <p>Không có dây hụi nào trong mục này</p>
+          </div>
+        `;
+        return;
+      }
+
+      filteredList.forEach(item => {
+        const percent = Math.round((item.ky_hien_tai / item.tong_so_phan) * 100);
+        
+        const card = document.createElement('div');
+        card.className = 'day-hui-card';
+        card.onclick = () => viewHuiDetail(item.id);
+
+        card.innerHTML = `
+          <div class="card-header">
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 2px;">
+                <div class="card-name" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 190px;">${item.ten_day}</div>
+                <button class="btn-card-action" onclick="downloadLineReport('${item.id}', event)" title="Xuất báo cáo tình trạng đóng hụi">
+                  <svg class="svg-icon" viewBox="0 0 24 24" style="width: 12px; height: 12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </button>
+              </div>
+              <div class="card-date-row">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Bắt đầu: ${item.ngay_bat_dau}</span>
+              </div>
+            </div>
+            <svg class="svg-icon chevron" viewBox="0 0 24 24" style="flex-shrink: 0;"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </div>
+          
+          <div class="card-divider"></div>
+          
+          <div class="card-metrics">
+            <div class="metric-col">
+              <div class="metric-label">Số tiền kỳ</div>
+              <div class="metric-value">${formatMoney(item.so_tien_ky)}</div>
+            </div>
+            <div class="metric-col" style="text-align: right;">
+              <div class="metric-label">Tiến độ kỳ</div>
+              <div class="metric-value" style="color: var(--warning);">Kỳ ${item.ky_hien_tai}/${item.tong_so_phan}</div>
+            </div>
+          </div>
+
+          <div class="progress-bar-container">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+            </div>
+          </div>
+        `;
+        
+        container.appendChild(card);
+      });
+    }
+
+    function switchTab(tabKey) {
+      currentTab = tabKey;
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`tab-${tabKey}`).classList.add('active');
+      renderHuiCardsList();
+    }
+
+    // -------------------------------------------------------------
+    // MÀN HÌNH CHI TIẾT DÂY HỤI
+    // -------------------------------------------------------------
+    function viewHuiDetail(id) {
+      selectedHuiId = id;
+      const dayHui = huiData.find(item => item.id === id);
+      if (!dayHui) return;
+
+      document.getElementById('screen-home').classList.remove('active');
+      document.getElementById('screen-detail').classList.add('active');
+
+      // Ghi thông tin
+      document.getElementById('detail-hui-title').innerText = dayHui.ten_day;
+      document.getElementById('detail-ky-amount').innerText = formatMoney(dayHui.so_tien_ky);
+      document.getElementById('detail-current-ky').innerText = `Kỳ ${dayHui.ky_hien_tai}/${dayHui.tong_so_phan}`;
+      document.getElementById('detail-commission-amount').innerText = formatMoney(dayHui.tien_thao_moi_ky);
+      
+      const badge = document.getElementById('detail-status-badge');
+      if (dayHui.trang_thai === 'active') {
+        badge.innerText = 'Đang chạy';
+        badge.style.color = 'var(--success)';
+        badge.style.backgroundColor = 'var(--success-bg)';
+        document.getElementById('btn-khui-ky-moi').style.display = 'flex';
+      } else {
+        badge.innerText = 'Đã hoàn thành';
+        badge.style.color = 'var(--primary)';
+        badge.style.backgroundColor = 'rgba(99, 102, 241, 0.15)';
+        document.getElementById('btn-khui-ky-moi').style.display = 'none';
+      }
+
+      const percent = Math.round((dayHui.ky_hien_tai / dayHui.tong_so_phan) * 100);
+      document.getElementById('detail-progress-percent').innerText = `${percent}%`;
+      document.getElementById('detail-progress-fill').style.width = `${percent}%`;
+
+      renderMembersList(dayHui);
+    }
+
+    function goHome() {
+      selectedHuiId = null;
+      document.getElementById('screen-detail').classList.remove('active');
+      document.getElementById('screen-home').classList.add('active');
+      renderDashboard();
+      renderHuiCardsList();
+    }
+
+    function renderMembersList(dayHui) {
+      const container = document.getElementById('members-list-container');
+      container.innerHTML = '';
+
+      const targetKy = dayHui.ky_hien_tai;
+      
+      // Tìm thông tin thầu của kỳ hiện tại nếu đã khui
+      const nguoiHotKyNay = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === targetKy);
+      const giaThauKyNay = nguoiHotKyNay ? nguoiHotKyNay.trang_thai_hot.gia_hot : 0;
+
+      dayHui.hui_vien.forEach(hv => {
+        // Kiểm tra xem đã đóng chưa
+        const payment = hv.lich_su_dong.find(p => p.ky === targetKy);
+        const daDong = payment ? payment.da_dong : false;
+
+        const soTienPhaiDong = calculateTienPhaiDong(hv, dayHui, targetKy, giaThauKyNay);
+
+        const daHot = hv.trang_thai_hot.da_hot;
+        const daHotTruocDay = daHot && hv.trang_thai_hot.ky_hot < targetKy;
+        const hotKyNay = daHot && hv.trang_thai_hot.ky_hot === targetKy;
+
+        const card = document.createElement('div');
+        card.className = `hv-card ${daHot ? 'hotted' : ''}`;
+
+        let badgeMarkup = '';
+        if (daHotTruocDay) {
+          badgeMarkup = `<span class="mini-badge" style="cursor:pointer; display:inline-flex; align-items:center; gap:2px;" onclick="showReceipt('${dayHui.id}', ${hv.trang_thai_hot.ky_hot}, '${hv.id}')" title="Bấm để xem biên nhận">Hụi chết (Kỳ ${hv.trang_thai_hot.ky_hot} 🧾)</span>`;
+        } else if (hotKyNay) {
+          badgeMarkup = `<span class="mini-badge winner" style="cursor:pointer; display:inline-flex; align-items:center; gap:2px;" onclick="showReceipt('${dayHui.id}', ${hv.trang_thai_hot.ky_hot}, '${hv.id}')" title="Bấm để xem biên nhận">Hốt kỳ này (${formatMoney(hv.trang_thai_hot.tien_nhan_thuc_te)} 🧾)</span>`;
+        } else {
+          badgeMarkup = `<span class="mini-badge live">Hụi sống</span>`;
+        }
+
+        // Nếu đã đóng hụi, hiển thị bằng chứng thời gian đóng hụi chuẩn từng giây!
+        if (daDong && payment && payment.ngay_dong) {
+          badgeMarkup += ` <span class="mini-badge" style="background-color: rgba(16, 185, 129, 0.15); color: var(--success); font-weight: 500;" title="Thời gian xác nhận đóng tiền">⏱️ ${formatDateTime(payment.ngay_dong)}</span>`;
+        }
+
+        card.innerHTML = `
+          <div class="hv-card-left">
+            <div class="hv-avatar">
+              <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </div>
+            <div>
+              <div class="hv-name">${hv.ten}</div>
+              <div class="hv-badges">
+                ${badgeMarkup}
+              </div>
+            </div>
+          </div>
+
+          <div class="hv-card-right">
+            <div class="hv-amount">${formatMoney(soTienPhaiDong)}</div>
+            <div class="hv-actions">
+              ${(!daDong && !hotKyNay) ? `
+                <button class="btn-zalo" onclick="sendZaloReminder('${hv.id}')" title="Nhắc nhở Zalo">
+                  <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                </button>
+              ` : ''}
+              ${!hotKyNay ? `
+                <button class="btn-pay ${daDong ? 'done' : 'todo'}" onclick="togglePayment('${hv.id}')">
+                  ${daDong ? `
+                    <svg class="svg-icon" style="width:12px;height:12px" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Đã đóng
+                  ` : 'Chờ đóng'}
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function togglePayment(huiVienId) {
+      const dayHui = huiData.find(item => item.id === selectedHuiId);
+      if (!dayHui) return;
+
+      const targetKy = dayHui.ky_hien_tai;
+      
+      dayHui.hui_vien.forEach(hv => {
+        if (hv.id === huiVienId) {
+          const payment = hv.lich_su_dong.find(p => p.ky === targetKy);
+          if (payment) {
+            payment.da_dong = !payment.da_dong;
+            
+            const nguoiHotKyNay = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === targetKy);
+            const giaThauKyNay = nguoiHotKyNay ? nguoiHotKyNay.trang_thai_hot.gia_hot : 0;
+            const soTienPhaiDong = calculateTienPhaiDong(hv, dayHui, targetKy, giaThauKyNay);
+
+            payment.so_tien_da_dong = payment.da_dong ? soTienPhaiDong : 0;
+            payment.ngay_dong = payment.da_dong ? new Date().toISOString() : null; // Lưu mốc thời gian thực đầy đủ giờ phút giây
+          }
+        }
+      });
+
+      saveToLocalStorage();
+      renderMembersList(dayHui);
+      showToast("Đã cập nhật trạng thái đóng tiền!");
+    }
+
+    // -------------------------------------------------------------
+    // CHỨC NĂNG SAO CHÉP & GỬI NHẮC NHỞ QUA ZALO
+    // -------------------------------------------------------------
+    function sendZaloReminder(huiVienId) {
+      const dayHui = huiData.find(item => item.id === selectedHuiId);
+      if (!dayHui) return;
+
+      const hv = dayHui.hui_vien.find(h => h.id === huiVienId);
+      if (!hv) return;
+
+      const targetKy = dayHui.ky_hien_tai;
+      const nguoiHotKyNay = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === targetKy);
+      const giaThauKyNay = nguoiHotKyNay ? nguoiHotKyNay.trang_thai_hot.gia_hot : 0;
+      const soTienPhaiDong = calculateTienPhaiDong(hv, dayHui, targetKy, giaThauKyNay);
+
+      const loaiHuiText = { daily: 'Ngày', weekly: 'Tuần', monthly: 'Tháng' }[dayHui.loai_hui] || 'Kỳ';
+      const laHuiChet = hv.trang_thai_hot.da_hot && hv.trang_thai_hot.ky_hot < targetKy;
+      const kieuHui = laHuiChet ? "Hụi chết" : "Hụi sống";
+
+      // Tạo tin nhắn nhắc đóng hụi
+      const message = `Chào Anh/Chị ${hv.ten}, em là chủ thảo dây hụi "${dayHui.ten_day}".\n\nHôm nay khui kỳ thứ ${targetKy} (${loaiHuiText}).\n• Phần đóng: ${hv.so_phan_mua} phần [${kieuHui}].\n• Số tiền cần đóng: ${formatMoney(soTienPhaiDong)}\n\nAnh/Chị vui lòng đóng tiền sớm vào tài khoản của em để em gom giao cho người hốt kỳ này nhé. Cảm ơn Anh/Chị nhiều ạ!`;
+
+      // Hàm phụ trợ để sao chép tin nhắn dự phòng cho giao thức file:// không hỗ trợ navigator.clipboard
+      function copyToClipboardFallback(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        let successful = false;
+        try {
+          successful = document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(textArea);
+        return successful;
+      }
+
+      const openZalo = () => {
+        setTimeout(() => {
+          if (hv.sdt) {
+            window.open(`https://zalo.me/${hv.sdt}`, '_blank');
+          } else {
+            window.open('https://chat.zalo.me', '_blank');
+          }
+        }, 1000);
+      };
+
+      // Sao chép tin nhắn vào clipboard (Hỗ trợ cả file:// không bảo mật)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(message).then(() => {
+          showToast("Đã sao chép tin nhắn nhắc nhở!");
+          openZalo();
+        }).catch(err => {
+          console.warn("navigator.clipboard failed, trying fallback...", err);
+          if (copyToClipboardFallback(message)) {
+            showToast("Đã sao chép tin nhắn nhắc nhở (dự phòng)!");
+          } else {
+            alert("Không thể tự động sao chép. Vui lòng sao chép thủ công:\n\n" + message);
+          }
+          openZalo();
+        });
+      } else {
+        if (copyToClipboardFallback(message)) {
+          showToast("Đã sao chép tin nhắn nhắc nhở (dự phòng)!");
+        } else {
+          alert("Không thể tự động sao chép. Vui lòng sao chép thủ công:\n\n" + message);
+        }
+        openZalo();
+      }
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      toast.innerText = text;
+      toast.style.display = 'block';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 2500);
+    }
+
+    // -------------------------------------------------------------
+    // MODAL: KHAI KỲ MỚI (KHUI HỤI)
+    // -------------------------------------------------------------
+    function openKhuiHuiModal() {
+      const dayHui = huiData.find(item => item.id === selectedHuiId);
+      if (!dayHui) return;
+
+      document.getElementById('khui-modal-title').innerText = `Khai Kỳ Hụi Thứ ${dayHui.ky_hien_tai}`;
+      
+      const picker = document.getElementById('khui-picker-container');
+      picker.innerHTML = '';
+      selectedWinnerId = null;
+      document.getElementById('khui-bid-amount').value = '';
+      document.getElementById('khui-preview-box').style.display = 'none';
+
+      const listChuaHot = dayHui.hui_vien.filter(h => !h.trang_thai_hot.da_hot);
+
+      if (listChuaHot.length === 0) {
+        picker.innerHTML = `<div class="error-text" style="color:var(--danger); text-align:center; padding:10px;">Tất cả hụi viên đều đã hốt hụi!</div>`;
+        return;
+      }
+
+      listChuaHot.forEach(hv => {
+        const item = document.createElement('div');
+        item.className = 'picker-item';
+        item.id = `picker-hv-${hv.id}`;
+        item.onclick = () => selectWinnerForKhui(hv.id);
+        item.innerHTML = `
+          <span>${hv.ten} (${hv.so_phan_mua} phần)</span>
+          <svg class="svg-icon select-check" style="width:16px;height:16px;display:none;color:var(--success)" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        `;
+        picker.appendChild(item);
+      });
+
+      document.getElementById('modal-khui-hui').classList.add('active');
+    }
+
+    function closeKhuiHuiModal() {
+      document.getElementById('modal-khui-hui').classList.remove('active');
+    }
+
+    function selectWinnerForKhui(hvId) {
+      selectedWinnerId = hvId;
+      document.querySelectorAll('.picker-item').forEach(item => {
+        item.classList.remove('active');
+        item.querySelector('.select-check').style.display = 'none';
+      });
+
+      const selected = document.getElementById(`picker-hv-${hvId}`);
+      if (selected) {
+        selected.classList.add('active');
+        selected.querySelector('.select-check').style.display = 'block';
+      }
+      updateKhuiPreview();
+    }
+
+    function updateKhuiPreview() {
+      // Loại bỏ dấu phân cách hàng nghìn để lấy số nguyên thô
+      const rawBid = document.getElementById('khui-bid-amount').value.replace(/\D/g, "");
+      const dayHui = huiData.find(item => item.id === selectedHuiId);
+      
+      if (selectedWinnerId && rawBid && dayHui) {
+        const bid = parseInt(rawBid);
+        const previewVal = calculateTienNhanThucTe(dayHui, dayHui.ky_hien_tai, bid);
+        
+        document.getElementById('khui-preview-value').innerText = formatMoney(previewVal);
+        document.getElementById('khui-preview-sub').innerText = `(Đã trừ tiền thảo chủ thảo: ${formatMoney(dayHui.tien_thao_moi_ky)})`;
+        document.getElementById('khui-preview-box').style.display = 'block';
+      } else {
+        document.getElementById('khui-preview-box').style.display = 'none';
+      }
+    }
+
+    function submitKhuiHui() {
+      if (!selectedWinnerId) {
+        alert("Vui lòng chọn hụi viên hốt kỳ này!");
+        return;
+      }
+
+      // Loại bỏ dấu phân cách hàng nghìn để lưu số chuẩn
+      const bidVal = document.getElementById('khui-bid-amount').value.replace(/\D/g, "");
+      if (!bidVal) {
+        alert("Vui lòng nhập giá thầu hợp lệ!");
+        return;
+      }
+
+      const price = parseInt(bidVal);
+      const dayHui = huiData.find(item => item.id === selectedHuiId);
+      const currentKy = dayHui.ky_hien_tai;
+
+      // Tính tiền thực nhận
+      const thucNhan = calculateTienNhanThucTe(dayHui, currentKy, price);
+
+      dayHui.hui_vien.forEach(hv => {
+        if (hv.id === selectedWinnerId) {
+          hv.trang_thai_hot = {
+            da_hot: true,
+            ky_hot: currentKy,
+            gia_hot: price,
+            ngay_hot: new Date().toISOString(), // Lưu mốc thời gian thực đầy đủ giờ phút giây
+            tien_nhan_thuc_te: thucNhan
+          };
+        }
+
+        // Tạo slot đóng tiền cho kỳ tiếp theo (K + 1)
+        if (currentKy < dayHui.tong_so_phan) {
+          hv.lich_su_dong.push({
+            ky: currentKy + 1,
+            da_dong: false,
+            so_tien_da_dong: 0,
+            ngay_dong: null
+          });
+        }
+      });
+
+      const isLastRound = currentKy >= dayHui.tong_so_phan;
+      dayHui.ky_hien_tai = isLastRound ? currentKy : currentKy + 1;
+      dayHui.trang_thai = isLastRound ? 'completed' : 'active';
+
+      saveToLocalStorage();
+      closeKhuiHuiModal();
+      viewHuiDetail(selectedHuiId);
+      
+      // Tự động mở biên nhận giao hụi đẹp đẽ ngay lập tức!
+      showReceipt(selectedHuiId, currentKy, selectedWinnerId);
+    }
+
+    // -------------------------------------------------------------
+    // MODAL: TẠO MỚI DÂY HỤI
+    // -------------------------------------------------------------
+    // Quản lý việc nhập danh sách hụi viên
+    let memberInputMode = 'auto'; // 'auto' hoặc 'paste'
+
+    function setMemberInputMode(mode) {
+      memberInputMode = mode;
+      document.getElementById('member-mode-auto').classList.toggle('active', mode === 'auto');
+      document.getElementById('member-mode-paste').classList.toggle('active', mode === 'paste');
+      
+      document.getElementById('member-input-auto-container').style.display = mode === 'auto' ? 'block' : 'none';
+      document.getElementById('member-input-paste-container').style.display = mode === 'paste' ? 'block' : 'none';
+    }
+
+    function parsePastedMembersText(text) {
+      if (!text.trim()) return [];
+      const lines = text.split('\n');
+      const members = [];
+      let idx = 0;
+      
+      lines.forEach((line) => {
+        const cleanLine = line.trim();
+        if (!cleanLine) return;
+        
+        idx++;
+        // Cắt theo ký tự Tab (khi copy từ Excel/Word table) hoặc dấu phẩy/chấm phẩy
+        let parts = cleanLine.split('\t');
+        if (parts.length === 1) {
+          parts = cleanLine.split(/[,;]/);
+        }
+        
+        let name = parts[0].trim();
+        let sdt = '';
+        let shares = 1;
+        
+        if (parts.length > 1) {
+          const secondPart = parts[1].trim();
+          // Kiểm tra xem phần thứ 2 là SĐT hay số phần mua
+          if (/^\d+$/.test(secondPart)) {
+            if (secondPart.length >= 8) {
+              sdt = secondPart;
+            } else {
+              shares = parseInt(secondPart) || 1;
+            }
+          } else {
+            sdt = secondPart;
+          }
+        }
+        
+        if (parts.length > 2) {
+          const thirdPart = parts[2].trim();
+          if (/^\d+$/.test(thirdPart)) {
+            shares = parseInt(thirdPart) || 1;
+          }
+        }
+        
+        members.push({
+          id: `hv_${Date.now()}_${idx}`,
+          ten: name || `Hụi viên ${idx}`,
+          sdt: sdt,
+          so_phan_mua: shares,
+          trang_thai_hot: {
+            da_hot: false,
+            ky_hot: null,
+            gia_hot: 0,
+            ngay_hot: null,
+            tien_nhan_thuc_te: 0
+          },
+          lich_su_dong: [
+            { ky: 1, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+          ]
+        });
+      });
+      return members;
+    }
+
+    function updateMemberPastePreview() {
+      const text = document.getElementById('add-hui-member-paste').value;
+      const parsed = parsePastedMembersText(text);
+      let totalShares = 0;
+      parsed.forEach(m => totalShares += m.so_phan_mua);
+      
+      document.getElementById('member-paste-preview').innerText = `Phát hiện: ${parsed.length} hội viên - Tổng cộng: ${totalShares} phần hụi`;
+    }
+
+    function handleMemberImportFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('add-hui-member-paste').value = e.target.result;
+        updateMemberPastePreview();
+        showToast("Đã tải dữ liệu hội viên từ tệp tin!");
+      };
+      reader.readAsText(file);
+    }
+
+    // -------------------------------------------------------------
+    // CHỨC NĂNG XỬ LÝ BIÊN NHẬN GIAO HỤI (PRINT & COPY SHARE)
+    // -------------------------------------------------------------
+    function showReceipt(dayHuiId, targetKy, memberId) {
+      const dayHui = huiData.find(item => item.id === dayHuiId);
+      if (!dayHui) return;
+      
+      const hv = dayHui.hui_vien.find(h => h.id === memberId);
+      if (!hv) return;
+      
+      const hotInfo = hv.trang_thai_hot;
+      if (!hotInfo.da_hot || hotInfo.ky_hot !== targetKy) return;
+      
+      const soTienKy = dayHui.so_tien_ky;
+      const bids = hotInfo.gia_hot;
+      
+      const soPhanChet = targetKy - 1;
+      const soPhanSong = Math.max(0, dayHui.tong_so_phan - soPhanChet - 1);
+      
+      const deadSum = soPhanChet * soTienKy;
+      const liveSum = soPhanSong * Math.max(0, soTienKy - bids);
+      const grossSum = deadSum + liveSum;
+      const netSum = hotInfo.tien_nhan_thuc_te;
+      
+      // Đổ dữ liệu vào tệp biên nhận
+      document.getElementById('receipt-date').innerText = `Ngày khui: ${formatDateTime(hotInfo.ngay_hot)}`;
+      document.getElementById('receipt-line-name').innerText = dayHui.ten_day;
+      document.getElementById('receipt-ky').innerText = targetKy;
+      document.getElementById('receipt-winner-name').innerText = hv.ten;
+      
+      const phoneDiv = document.getElementById('receipt-winner-phone');
+      if (hv.sdt) {
+        phoneDiv.innerHTML = `<strong>Số điện thoại:</strong> ${hv.sdt}`;
+        phoneDiv.style.display = 'block';
+      } else {
+        phoneDiv.style.display = 'none';
+      }
+      
+      document.getElementById('receipt-bid-value').innerText = formatMoney(bids);
+      
+      document.getElementById('receipt-dead-shares').innerText = soPhanChet;
+      document.getElementById('receipt-dead-sum').innerText = formatMoney(deadSum);
+      
+      document.getElementById('receipt-live-shares').innerText = soPhanSong;
+      document.getElementById('receipt-live-sum').innerText = formatMoney(liveSum);
+      
+      document.getElementById('receipt-gross-sum').innerText = formatMoney(grossSum);
+      document.getElementById('receipt-commission-sum').innerText = `-${formatMoney(dayHui.tien_thao_moi_ky)}`;
+      document.getElementById('receipt-net-sum').innerText = formatMoney(netSum);
+      
+      // Mở hiển thị modal
+      document.getElementById('modal-receipt').classList.add('active');
+    }
+
+    function closeReceiptModal() {
+      document.getElementById('modal-receipt').classList.remove('active');
+    }
+
+    function printReceipt() {
+      window.print();
+    }
+
+    function copyReceiptText() {
+      const dateText = document.getElementById('receipt-date').innerText;
+      const lineName = document.getElementById('receipt-line-name').innerText;
+      const ky = document.getElementById('receipt-ky').innerText;
+      const winnerName = document.getElementById('receipt-winner-name').innerText;
+      const bidVal = document.getElementById('receipt-bid-value').innerText;
+      const deadShares = document.getElementById('receipt-dead-shares').innerText;
+      const deadSum = document.getElementById('receipt-dead-sum').innerText;
+      const liveShares = document.getElementById('receipt-live-shares').innerText;
+      const liveSum = document.getElementById('receipt-live-sum').innerText;
+      const grossSum = document.getElementById('receipt-gross-sum').innerText;
+      const commissionSum = document.getElementById('receipt-commission-sum').innerText;
+      const netSum = document.getElementById('receipt-net-sum').innerText;
+      
+      const message = `🧾 BIÊN NHẬN GIAO HỤI 🧾\n-------------------------------\n• ${dateText}\n• Dây hụi: ${lineName}\n• Kỳ khui: Kỳ thứ ${ky}\n• Người hốt hụi: ${winnerName}\n• Thầu khui: ${bidVal}\n-------------------------------\n- Phần hụi chết (${deadShares} phần): ${deadSum}\n- Phần hụi sống (${liveShares} phần): ${liveSum}\n=> TỔNG CỘNG GOM: ${grossSum}\n• Trừ tiền thảo chủ thảo: ${commissionSum}\n-------------------------------\n=> THỰC NHẬN CÒN LẠI:\n👉 ${netSum} 👈\n-------------------------------\nChủ thảo đã lập biên nhận và chuyển khoản / giao tiền mặt đầy đủ cho anh/chị. Cảm ơn anh/chị!`;
+
+      // Sao chép tin nhắn dự phòng
+      function copyToClipboardFallback(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        let successful = false;
+        try {
+          successful = document.execCommand('copy');
+        } catch (err) {
+          console.error('Fallback copy failed', err);
+        }
+        document.body.removeChild(textArea);
+        return successful;
+      }
+
+      const openZalo = () => {
+        setTimeout(() => {
+          const dayHui = huiData.find(item => item.id === selectedHuiId);
+          if (dayHui) {
+            const hv = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === parseInt(ky));
+            if (hv && hv.sdt) {
+              window.open(`https://zalo.me/${hv.sdt}`, '_blank');
+            } else {
+              window.open('https://chat.zalo.me', '_blank');
+            }
+          } else {
+            window.open('https://chat.zalo.me', '_blank');
+          }
+        }, 1000);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(message).then(() => {
+          showToast("Đã sao chép biên nhận giao hụi!");
+          openZalo();
+        }).catch(err => {
+          copyToClipboardFallback(message);
+          showToast("Đã sao chép biên nhận giao hụi (dự phòng)!");
+          openZalo();
+        });
+      } else {
+        copyToClipboardFallback(message);
+        showToast("Đã sao chép biên nhận giao hụi (dự phòng)!");
+        openZalo();
+      }
+    }
+
+    function openAddHuiModal() {
+      document.getElementById('add-hui-name').value = '';
+      document.getElementById('add-hui-amount').value = '';
+      document.getElementById('add-hui-shares').value = '';
+      document.getElementById('add-hui-commission').value = '';
+      
+      if (document.getElementById('add-hui-member-paste')) {
+        document.getElementById('add-hui-member-paste').value = '';
+        document.getElementById('member-paste-preview').innerText = 'Phát hiện: 0 hội viên - Tổng cộng: 0 phần hụi';
+      }
+      
+      setMemberInputMode('auto');
+      setNewHuiType('weekly');
+      document.getElementById('modal-add-hui').classList.add('active');
+    }
+
+    function closeAddHuiModal() {
+      document.getElementById('modal-add-hui').classList.remove('active');
+    }
+
+    function setNewHuiType(type) {
+      newHuiType = type;
+      document.querySelectorAll('.type-selector-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`selector-${type}`).classList.add('active');
+    }
+
+    function submitCreateHui() {
+      const name = document.getElementById('add-hui-name').value;
+      // Loại bỏ mọi ký tự dấu phân cách trước khi chuyển sang số nguyên
+      const amountVal = document.getElementById('add-hui-amount').value.replace(/\D/g, "");
+      const commissionVal = document.getElementById('add-hui-commission').value.replace(/\D/g, "");
+
+      if (!name || !amountVal || !commissionVal) {
+        alert("Vui lòng nhập đầy đủ tên dây, số tiền một kỳ và tiền thảo!");
+        return;
+      }
+
+      const amount = parseInt(amountVal);
+      const commission = parseInt(commissionVal);
+
+      if (isNaN(amount) || isNaN(commission)) {
+        alert("Vui lòng nhập số tiền kỳ và tiền thảo hợp lệ!");
+        return;
+      }
+
+      let members = [];
+      let shares = 0;
+
+      if (memberInputMode === 'auto') {
+        const sharesVal = document.getElementById('add-hui-shares').value;
+        shares = parseInt(sharesVal);
+        if (isNaN(shares) || shares <= 0) {
+          alert("Vui lòng nhập tổng số phần hụi hợp lệ!");
+          return;
+        }
+        
+        // Khởi tạo danh sách hụi viên trống dựa trên số lượng phần
+        for (let i = 1; i <= shares; i++) {
+          members.push({
+            id: `hv_${Date.now()}_${i}`,
+            ten: `Hụi viên ${i}`,
+            sdt: '',
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: false,
+              ky_hot: null,
+              gia_hot: 0,
+              ngay_hot: null,
+              tien_nhan_thuc_te: 0
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+            ]
+          });
+        }
+      } else {
+        const text = document.getElementById('add-hui-member-paste').value;
+        members = parsePastedMembersText(text);
+        if (members.length === 0) {
+          alert("Vui lòng dán danh sách hụi viên hợp lệ hoặc tải tệp lên!");
+          return;
+        }
+        
+        members.forEach(m => shares += m.so_phan_mua);
+      }
+
+      const newDayHui = {
+        id: `day_hui_${Date.now()}`,
+        ten_day: name,
+        so_tien_ky: amount,
+        loai_hui: newHuiType,
+        ngay_bat_dau: new Date().toISOString().split('T')[0],
+        tong_so_phan: shares,
+        ky_hien_tai: 1,
+        trang_thai: "active",
+        tien_thao_moi_ky: commission,
+        hui_vien: members
+      };
+
+      huiData.unshift(newDayHui);
+      saveToLocalStorage();
+      closeAddHuiModal();
+      
+      // Chuyển về đúng tab và render lại
+      switchTab(newHuiType);
+      renderDashboard();
+      renderHuiCardsList();
+      alert(`Đã khởi tạo dây hụi "${name}" thành công với ${members.length} hụi viên (${shares} phần hụi)!`);
+    }
+
+    // -------------------------------------------------------------
+    // XUẤT & NHẬP DỮ LIỆU DỰ PHÒNG (BACKUP & RESTORE)
+    // -------------------------------------------------------------
+    function exportData() {
+      const dataStr = JSON.stringify(huiData, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `Backup_AppHui_ChuThao_${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      showToast("Đã tải tệp dự phòng về máy!");
+    }
+
+    function importData() {
+      document.getElementById('import-file-input').click();
+    }
+
+    function handleImportFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            huiData = imported;
+            saveToLocalStorage();
+            renderDashboard();
+            renderHuiCardsList();
+            alert("Nạp dữ liệu dự phòng thành công!");
+          } else {
+            alert("Định dạng file không đúng cấu trúc AppHui!");
+          }
+        } catch (err) {
+          alert("Lỗi đọc file, tệp tin bị hỏng!");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // -------------------------------------------------------------
+    // CHỨC NĂNG MỚI: XUẤT FILE BÁO CÁO & ĐÓNG TIỀN NHANH TOÀN BỘ KỲ
+    // -------------------------------------------------------------
+    
+    // Tải file Excel CSV về máy chủ offline (hỗ trợ BOM UTF-16 LE và phân cột bằng tab để không bao giờ lỗi font trên Excel)
+    function downloadCSVFile(filename, tsvContent) {
+      // 1. Tạo UTF-16 LE BOM (FF FE)
+      const bom = [0xFF, 0xFE];
+      
+      // 2. Chuyển đổi chuỗi thành mảng byte UTF-16 LE (mỗi ký tự chiếm 2 byte, Byte thấp trước, Byte cao sau)
+      const byteArray = [];
+      for (let i = 0; i < tsvContent.length; ++i) {
+        const charCode = tsvContent.charCodeAt(i);
+        byteArray.push(charCode & 0xFF);         // Byte thấp
+        byteArray.push((charCode & 0xFF00) >>> 8); // Byte cao
+      }
+      
+      // 3. Kết hợp BOM và dữ liệu
+      const uint8Array = new Uint8Array([...bom, ...byteArray]);
+      
+      // 4. Tạo Blob với mã hóa UTF-16 LE
+      const blob = new Blob([uint8Array], { type: 'text/csv;charset=utf-16le;' });
+      
+      if (navigator.msSaveBlob) { // Hỗ trợ IE 10+
+        navigator.msSaveBlob(blob, filename);
+      } else {
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+          const url = URL.createObjectURL(blob);
+          link.setAttribute("href", url);
+          link.setAttribute("download", filename);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
+      }
+    }
+
+    // Đếm số kỳ đã khui thầu (số người đã hốt)
+    function winnerCount(dayHui) {
+      let count = 0;
+      dayHui.hui_vien.forEach(hv => {
+        if (hv.trang_thai_hot.da_hot) {
+          count++;
+        }
+      });
+      return count;
+    }
+
+    // 1. Tải báo cáo tình trạng đóng hụi / lịch sử dây hụi chuẩn Excel (từ trang chủ)
+    function downloadLineReport(lineId, event) {
+      if (event) {
+        event.stopPropagation(); // Ngăn chặn mở màn hình chi tiết khi click nút xuất file
+      }
+      
+      const dayHui = huiData.find(item => item.id === lineId);
+      if (!dayHui) return;
+
+      const loaiHuiText = { daily: 'Ngày', weekly: 'Tuần', monthly: 'Tháng' }[dayHui.loai_hui] || 'Kỳ';
+      const esc = (val) => '"' + String(val).replace(/"/g, '""') + '"';
+
+      let tsv = "";
+      tsv += `BÁO CÁO TOÀN BỘ LỊCH SỬ DÂY HỤI\t\t\t\t\t\t\t\t\n`;
+      tsv += `THÔNG TIN CHUNG DÂY HỤI\t\t\t\t\t\t\t\t\n`;
+      tsv += `Tên dây hụi\tChu kỳ đóng\tSố tiền một kỳ (VND)\tTổng số phần hụi\tKỳ hiện tại\tTrạng thái dây\tTiền thảo mỗi kỳ (VND)\tNgày bắt đầu\tThời gian xuất báo cáo\n`;
+      tsv += `${esc(dayHui.ten_day)}\t${esc(loaiHuiText)}\t${dayHui.so_tien_ky}\t${dayHui.tong_so_phan}\tKỳ ${dayHui.ky_hien_tai}\t${esc(dayHui.trang_thai === 'active' ? 'ĐANG CHẠY' : 'ĐÃ HOÀN THÀNH')}\t${dayHui.tien_thao_moi_ky}\t${esc(dayHui.ngay_bat_dau)}\t${esc(formatDateTime(new Date().toISOString()))}\n`;
+      tsv += `\t\t\t\t\t\t\t\t\n`;
+      
+      tsv += `I. DANH SÁCH HỘI VIÊN & THÔNG TIN HỐT HỤI TỔNG HỢP\t\t\t\t\t\t\t\t\n`;
+      tsv += `STT\tTên hội viên\tSố điện thoại\tSố phần mua\tTrạng thái hốt\tKỳ hốt\tGiá thầu khui (VND)\tThực nhận hốt (VND)\tNgày giờ khui hốt\n`;
+      dayHui.hui_vien.forEach((hv, idx) => {
+        const hotInfo = hv.trang_thai_hot;
+        let hotStatus = "Chưa hốt";
+        let kyHot = "-";
+        let giaHot = "-";
+        let tienNhan = "-";
+        let ngayHot = "-";
+        if (hotInfo.da_hot) {
+          hotStatus = "Đã hốt";
+          kyHot = hotInfo.ky_hot;
+          giaHot = hotInfo.gia_hot;
+          tienNhan = hotInfo.tien_nhan_thuc_te;
+          ngayHot = formatDateTime(hotInfo.ngay_hot);
+        }
+        tsv += `${idx + 1}\t${esc(hv.ten)}\t${esc(hv.sdt || '')}\t${hv.so_phan_mua}\t${esc(hotStatus)}\t${kyHot}\t${giaHot}\t${tienNhan}\t${esc(ngayHot)}\n`;
+      });
+      tsv += `\t\t\t\t\t\t\t\t\n`;
+      
+      tsv += `II. BẢNG TỔNG HỢP KẾT QUẢ KHUI HỤI QUA TỪNG KỲ\t\t\t\t\t\t\t\t\n`;
+      tsv += `Kỳ khui\tNgười hốt kỳ này\tGiá thầu khui (VND)\tTổng gom hụi chết (VND)\tTổng gom hụi sống (VND)\tTiền thảo trích (VND)\tThực nhận giao hội viên (VND)\tThời gian khui\n`;
+      
+      const maxKhuiKy = dayHui.trang_thai === 'completed' ? dayHui.tong_so_phan : dayHui.ky_hien_tai;
+      
+      for (let k = 1; k <= maxKhuiKy; k++) {
+        const winner = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === k);
+        if (winner) {
+          const hotInfo = winner.trang_thai_hot;
+          const soTienKy = dayHui.so_tien_ky;
+          const soPhanChet = k - 1;
+          const soPhanSong = Math.max(0, dayHui.tong_so_phan - soPhanChet - 1);
+          const deadSum = soPhanChet * soTienKy;
+          const liveSum = soPhanSong * Math.max(0, soTienKy - hotInfo.gia_hot);
+          tsv += `${k}\t${esc(winner.ten)}\t${hotInfo.gia_hot}\t${deadSum}\t${liveSum}\t${dayHui.tien_thao_moi_ky}\t${hotInfo.tien_nhan_thuc_te}\t${esc(formatDateTime(hotInfo.ngay_hot))}\n`;
+        } else {
+          tsv += `${k}\tCHƯA KHUI\t-\t-\t-\t-\t-\t-\n`;
+        }
+      }
+      tsv += `\t\t\t\t\t\t\t\t\n`;
+      
+      tsv += `III. BẢNG CHI TIẾT TRẠNG THÁI ĐÓNG TIỀN QUA TỪNG KỲ\t\t\t\t\t\t\t\t\n`;
+      tsv += `Kỳ khui\tHội viên đóng tiền\tSố điện thoại\tSố phần đóng\tVai trò đóng\tSố tiền cần đóng (VND)\tTrạng thái đóng\tNgày giờ đóng tiền\n`;
+      
+      for (let k = 1; k <= maxKhuiKy; k++) {
+        const winner = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === k);
+        const giaThauK = winner ? winner.trang_thai_hot.gia_hot : 0;
+        
+        dayHui.hui_vien.forEach(hv => {
+          const payment = hv.lich_su_dong.find(p => p.ky === k);
+          const daDong = payment ? payment.da_dong : false;
+          const laWinner = winner && winner.id === hv.id;
+          const daHotTruocDay = hv.trang_thai_hot.da_hot && hv.trang_thai_hot.ky_hot < k;
+          
+          let role = "Hụi sống";
+          if (laWinner) {
+            role = "Người hốt kỳ này";
+          } else if (daHotTruocDay) {
+            role = `Hụi chết (Hốt kỳ ${hv.trang_thai_hot.ky_hot})`;
+          }
+          
+          let statusText = "";
+          let ngayDongStr = "-";
+          if (laWinner) {
+            statusText = "Được nhận tiền hốt";
+          } else if (daDong && payment) {
+            statusText = "Đã đóng";
+            ngayDongStr = formatDateTime(payment.ngay_dong);
+          } else {
+            statusText = "Chờ đóng";
+          }
+          
+          const tienPhaiDong = calculateTienPhaiDong(hv, dayHui, k, giaThauK);
+          
+          tsv += `${k}\t${esc(hv.ten)}\t${esc(hv.sdt || '')}\t${hv.so_phan_mua}\t${esc(role)}\t${tienPhaiDong}\t${esc(statusText)}\t${esc(ngayDongStr)}\n`;
+        });
+      }
+      tsv += `\t\t\t\t\t\t\t\t\n`;
+      
+      tsv += `IV. TỔNG KẾT TÀI CHÍNH TÍCH LŨY\t\t\t\t\t\t\t\t\n`;
+      const hoanThanhKy = winnerCount(dayHui);
+      const totalCommissionLine = hoanThanhKy * dayHui.tien_thao_moi_ky;
+      
+      tsv += `Tổng số kỳ đã khui hoàn tất\t${hoanThanhKy}\tkỳ\t\t\t\t\t\n`;
+      tsv += `Tổng tiền thảo đã thu chủ thảo\t${totalCommissionLine}\tVND\t\t\t\t\t\n`;
+      tsv += `Báo cáo xuất từ Phần Mềm Chủ Thảo Quản Lý Hụi - Excel CSV UTF-16 LE bảo chứng thời gian thực.\t\t\t\t\t\t\t\n`;
+
+      const filename = `TinhTrangDongHui_${dayHui.ten_day.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+      downloadCSVFile(filename, tsv);
+      showToast("Đã tải tệp Excel (.csv) lịch sử đóng hụi!");
+    }
+
+    // 2. Đóng tiền nhanh cho tất cả hụi viên chưa đóng trong kỳ hiện tại
+    function markAllPaidCurrentRound() {
+      const dayHui = huiData.find(item => item.id === selectedHuiId);
+      if (!dayHui) return;
+
+      const targetKy = dayHui.ky_hien_tai;
+      
+      // Tìm thông tin thầu của kỳ hiện tại nếu đã khui
+      const nguoiHotKyNay = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === targetKy);
+      const giaThauKyNay = nguoiHotKyNay ? nguoiHotKyNay.trang_thai_hot.gia_hot : 0;
+      
+      let countPaid = 0;
+      const nowISO = new Date().toISOString();
+
+      dayHui.hui_vien.forEach(hv => {
+        // Người hốt kỳ này không cần xử lý đóng tiền (vì họ là người nhận tiền)
+        const hotKyNay = hv.trang_thai_hot.da_hot && hv.trang_thai_hot.ky_hot === targetKy;
+        if (hotKyNay) return;
+
+        const payment = hv.lich_su_dong.find(p => p.ky === targetKy);
+        if (payment && !payment.da_dong) {
+          payment.da_dong = true;
+          const soTienPhaiDong = calculateTienPhaiDong(hv, dayHui, targetKy, giaThauKyNay);
+          payment.so_tien_da_dong = soTienPhaiDong;
+          payment.ngay_dong = nowISO;
+          countPaid++;
+        }
+      });
+
+      if (countPaid === 0) {
+        showToast("Tất cả hụi viên đã đóng tiền kỳ này rồi!");
+        return;
+      }
+
+      saveToLocalStorage();
+      renderMembersList(dayHui);
+      showToast(`Đã đóng nhanh tiền cho ${countPaid} hụi viên!`);
+    }
+
+    // 3. Tải báo cáo kỳ hiện tại dạng tệp Excel CSV
+    function downloadRoundReport() {
+      const dayHui = huiData.find(item => item.id === selectedHuiId);
+      if (!dayHui) return;
+
+      const targetKy = dayHui.ky_hien_tai;
+      const loaiHuiText = { daily: 'Ngày', weekly: 'Tuần', monthly: 'Tháng' }[dayHui.loai_hui] || 'Kỳ';
+      const esc = (val) => '"' + String(val).replace(/"/g, '""') + '"';
+
+      let tsv = "";
+      tsv += `BÁO CÁO CHI TIẾT TÌNH TRẠNG KỲ HỤI HIỆN TẠI (KỲ ${targetKy})\t\t\t\t\t\t\n`;
+      tsv += `Dây hụi\tChu kỳ\tKỳ hiện tại\tTổng số phần\tNgày xuất báo cáo\t\t\t\n`;
+      tsv += `${esc(dayHui.ten_day)}\tHụi ${esc(loaiHuiText)}\tKỳ ${targetKy}/${dayHui.tong_so_phan}\t${dayHui.tong_so_phan}\t${esc(formatDateTime(new Date().toISOString()))}\t\t\t\n`;
+      tsv += `\t\t\t\t\t\t\n`;
+      
+      tsv += `I. THÔNG TIN KHUI HỤI KỲ NÀY\t\t\t\t\t\t\n`;
+      const winner = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === targetKy);
+      
+      if (winner) {
+        const hotInfo = winner.trang_thai_hot;
+        const soTienKy = dayHui.so_tien_ky;
+        const soPhanChet = targetKy - 1;
+        const soPhanSong = Math.max(0, dayHui.tong_so_phan - soPhanChet - 1);
+        const deadSum = soPhanChet * soTienKy;
+        const liveSum = soPhanSong * Math.max(0, soTienKy - hotInfo.gia_hot);
+        const grossSum = deadSum + liveSum;
+
+        tsv += `Trạng thái khui\tHội viên hốt\tGiá thầu khui (VND)\tTổng gom hụi chết (VND)\tTổng gom hụi sống (VND)\tTiền thảo trích (VND)\tThực nhận giao hội viên (VND)\tThời gian khui\n`;
+        tsv += `ĐÃ KHUI\t${esc(winner.ten)}\t${hotInfo.gia_hot}\t${deadSum}\t${liveSum}\t${dayHui.tien_thao_moi_ky}\t${hotInfo.tien_nhan_thuc_te}\t${esc(formatDateTime(hotInfo.ngay_hot))}\n`;
+      } else {
+        tsv += `Trạng thái khui\tLưu ý\t\t\t\t\t\n`;
+        tsv += `CHƯA KHUI KỲ NÀY\tCần thực hiện Khai Kỳ Mới để cập nhật thông tin thầu và tính tiền sống/chết.\t\t\t\t\t\n`;
+      }
+      
+      tsv += `\t\t\t\t\t\t\n`;
+      tsv += `II. DANH SÁCH CHI TIẾT ĐÓNG TIỀN KỲ NÀY\t\t\t\t\t\t\n`;
+      tsv += `STT\tTên hội viên\tSố điện thoại\tSố phần đóng\tVai trò đóng\tSố tiền cần đóng (VND)\tTrạng thái đóng\tNgày giờ đóng tiền\n`;
+      
+      const giaThauKyNay = winner ? winner.trang_thai_hot.gia_hot : 0;
+      
+      dayHui.hui_vien.forEach((hv, index) => {
+        const payment = hv.lich_su_dong.find(p => p.ky === targetKy);
+        const daDong = payment ? payment.da_dong : false;
+        
+        const laNguoiHotKyNay = winner && winner.id === hv.id;
+        const daHotTruocDay = hv.trang_thai_hot.da_hot && hv.trang_thai_hot.ky_hot < targetKy;
+        
+        let loaiHuiNguoiChoi = "Hụi sống";
+        if (laNguoiHotKyNay) {
+          loaiHuiNguoiChoi = "Hốt kỳ này";
+        } else if (daHotTruocDay) {
+          loaiHuiNguoiChoi = `Hụi chết (Hốt kỳ ${hv.trang_thai_hot.ky_hot})`;
+        }
+        
+        const soTienPhaiDong = calculateTienPhaiDong(hv, dayHui, targetKy, giaThauKyNay);
+        
+        let statusStr = "";
+        let ngayDongStr = "-";
+        if (laNguoiHotKyNay) {
+          statusStr = "Được nhận tiền hốt";
+        } else if (daDong) {
+          statusStr = "Đã đóng";
+          ngayDongStr = formatDateTime(payment.ngay_dong);
+        } else {
+          statusStr = "Chờ đóng";
+        }
+        
+        tsv += `${index + 1}\t${esc(hv.ten)}\t${esc(hv.sdt || '')}\t${hv.so_phan_mua}\t${esc(loaiHuiNguoiChoi)}\t${soTienPhaiDong}\t${esc(statusStr)}\t${esc(ngayDongStr)}\n`;
+      });
+      
+      tsv += `\t\t\t\t\t\t\n`;
+      tsv += `Báo cáo xuất từ Phần Mềm Chủ Thảo Quản Lý Hụi - Excel CSV UTF-16 LE bảo chứng thời gian thực.\t\t\t\t\t\t\t\n`;
+
+      const filename = `BaoCaoKy_${targetKy}_${dayHui.ten_day.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+      downloadCSVFile(filename, tsv);
+      showToast("Đã tải tệp Excel (.csv) báo cáo kỳ hụi!");
+    }
+
+    // Khởi động khi mở trang
+    window.onload = initApp;
+  </script>
+</body>
+</html>
