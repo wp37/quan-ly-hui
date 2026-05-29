@@ -57,6 +57,16 @@ export default function DetailScreen({
   const nguoiHotKyNay = huiVienList.find(h => h.da_hot && h.ky_hot === dayHui.ky_hien_tai);
   const giaThauKyNay = nguoiHotKyNay ? Number(nguoiHotKyNay.gia_hot || 0) : 0;
 
+  // Lấy danh sách các đợt đã khui hụi
+  const historyList = [];
+  for (let k = 1; k <= dayHui.tong_so_phan; k++) {
+    const winner = huiVienList.find(h => h.da_hot && h.ky_hot === k);
+    if (winner) {
+      historyList.push({ ky: k, winner });
+    }
+  }
+  historyList.sort((a, b) => b.ky - a.ky);
+
   // Handles bidding thầu preview calculation
   const getKhuiPreviewValue = () => {
     if (!selectedWinnerId || !bidAmount) return 0;
@@ -370,6 +380,100 @@ export default function DetailScreen({
               </>
             )}
           </button>
+        </div>
+
+        {/* Lịch Sử Khui Hụi Qua Từng Đợt (Căn Cứ Đóng Hụi) */}
+        <div className="section-header" style={{ marginTop: '25px' }}>
+          <Calendar size={16} style={{ color: 'var(--warning)' }} />
+          <span className="section-title">Lịch Sử Khui Hụi Từng Đợt (Căn Cứ Đóng)</span>
+        </div>
+
+        <div style={{ marginBottom: '25px' }}>
+          {historyList.length === 0 ? (
+            <div style={{
+              backgroundColor: 'var(--card-bg)', border: '1px dashed var(--card-border)',
+              borderRadius: '16px', padding: '20px', textAlign: 'center', color: 'var(--text-dark)', fontSize: '13px'
+            }}>
+              Chưa có đợt khui hụi nào được thực hiện. Bấm "Khai Kỳ Mới" để khui đợt đầu tiên.
+            </div>
+          ) : (
+            historyList.map((item) => {
+              const k = item.ky;
+              const winner = item.winner;
+              const giaHot = Number(winner.gia_hot || 0);
+              const thucNhan = Number(winner.tien_nhan_thuc_te || 0);
+              const ngayHot = formatDateTime(winner.ngay_hot);
+              const soTienKy = Number(dayHui.so_tien_ky);
+              const tienDongSong = soTienKy - giaHot;
+
+              return (
+                <div key={k} style={{
+                  backgroundColor: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                  borderRadius: '16px', padding: '14px 16px', marginBottom: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ backgroundColor: 'var(--warning-bg)', color: 'var(--warning)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '700' }}>
+                          Kỳ Khui {k}
+                        </span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>⏱️ {ngayHot}</span>
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: '700', color: '#fff', marginTop: '6px' }}>
+                        Hội viên hốt: <span style={{ color: 'var(--primary)' }}>{winner.ten}</span>
+                      </div>
+                    </div>
+                    <button
+                      className="btn-card-action"
+                      onClick={() => handleShowReceipt(winner.id, k)}
+                      title="Xem biên nhận kỳ này"
+                      style={{
+                        width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '14px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', color: 'var(--primary)', cursor: 'pointer'
+                      }}
+                    >
+                      🧾
+                    </button>
+                  </div>
+
+                  <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.05)', margin: '10px 0' }}></div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
+                    <div style={{ display: 'flex', justifycontent: 'space-between', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Mức thầu khui (tiền lỗ):</span>
+                      <span style={{ color: 'var(--warning)', fontWeight: '700' }}>-{formatMoney(giaHot)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Thực nhận giao hụi viên:</span>
+                      <span style={{ color: 'var(--success)', fontWeight: '700' }}>{formatMoney(thucNhan)}</span>
+                    </div>
+                    
+                    <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.05)', margin: '6px 0' }}></div>
+                    
+                    <div style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '10px', padding: '10px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                      <div style={{ fontSize: '10px', fontWeight: '700', color: 'var(--text-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                        Căn cứ đóng hụi kỳ này:
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--success)', fontWeight: '600' }}>🟢 Hụi sống:</span>
+                          <span style={{ color: '#fff', fontWeight: '600' }}>
+                            {formatMoney(soTienKy)} - {formatMoney(giaHot)} = <span style={{ color: 'var(--success)' }}>{formatMoney(tienDongSong)}</span>
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-dark)', fontWeight: '600' }}>🔴 Hụi chết:</span>
+                          <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>
+                            Đóng đủ 100% gốc = <span style={{ color: '#fff' }}>{formatMoney(soTienKy)}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Members List */}

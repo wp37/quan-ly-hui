@@ -101,11 +101,21 @@ export default function Dashboard({
         }
       }
 
-      members.push({
-        ten: mName || `Hội viên ${idx}`,
-        sdt: sdt,
-        so_phan_mua: shares
-      });
+      if (shares > 1) {
+        for (let p = 1; p <= shares; p++) {
+          members.push({
+            ten: `${mName} (Phần ${p})`,
+            sdt: sdt,
+            so_phan_mua: 1
+          });
+        }
+      } else {
+        members.push({
+          ten: mName || `Hội viên ${idx}`,
+          sdt: sdt,
+          so_phan_mua: 1
+        });
+      }
     });
     return members;
   };

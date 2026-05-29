@@ -10,7 +10,8 @@ import {
   Alert, 
   Share,
   Linking,
-  StatusBar
+  StatusBar,
+  Platform
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { 
@@ -29,7 +30,10 @@ import {
   X, 
   User,
   Shield,
-  Activity
+  Activity,
+  Download,
+  Printer,
+  Share2
 } from 'lucide-react-native';
 
 import { initialHuiData } from './src/data/huiData';
@@ -87,6 +91,281 @@ export default function App() {
       const stats = calculateDayHuiStats(item);
       return total + stats.tongTienThaoDaThu;
     }, 0);
+  };
+
+  // Hàm xuất CSV đặc biệt bảo vệ font tiếng Việt UTF-16 LE trên Excel
+  const handleExportCSV = async (filename, tsvContent) => {
+    if (Platform.OS === 'web') {
+      const bom = [0xFF, 0xFE];
+      const byteArray = [];
+      for (let i = 0; i < tsvContent.length; ++i) {
+        const charCode = tsvContent.charCodeAt(i);
+        byteArray.push(charCode & 0xFF);         // Byte thấp
+        byteArray.push((charCode & 0xFF00) >>> 8); // Byte cao
+      }
+      
+      const uint8Array = new Uint8Array([...bom, ...byteArray]);
+      const blob = new Blob([uint8Array], { type: 'text/csv;charset=utf-16le;' });
+      
+      const link = document.createElement("a");
+      if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+      Alert.alert("Thành công", "Đã tải xuống file Excel báo cáo thành công!");
+    } else {
+      // Trên môi trường di động Mobile, chia sẻ trực tiếp dữ liệu văn bản báo cáo qua hệ thống
+      try {
+        await Share.share({
+          message: tsvContent,
+          title: filename
+        });
+      } catch (error) {
+        Alert.alert("Lỗi", "Không thể chia sẻ báo cáo hụi.");
+      }
+    }
+  };
+
+  // 1. Tải báo cáo lịch sử tình trạng đóng hụi của cả dây hụi
+  const downloadLineReport = (dayHui) => {
+    const loaiHuiText = { daily: 'Ngày', weekly: 'Tuần', monthly: 'Tháng' }[dayHui.loai_hui] || 'Kỳ';
+    const esc = (val) => '"' + String(val || '').replace(/"/g, '""') + '"';
+    
+    const formatDateTime = (isoString) => {
+      if (!isoString) return '-';
+      const date = new Date(isoString);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    };
+
+    let tsv = "";
+    tsv += `BÁO CÁO TOÀN BỘ LỊCH SỬ DÂY HỤI\t\t\t\t\t\t\t\t\n`;
+    tsv += `THÔNG TIN CHUNG DÂY HỤI\t\t\t\t\t\t\t\t\n`;
+    tsv += `Tên dây hụi\tChu kỳ đóng\tSố tiền một kỳ (VND)\tTổng số phần hụi\tKỳ hiện tại\tTrạng thái dây\tTiền thảo mỗi kỳ (VND)\tNgày bắt đầu\tThời gian xuất báo cáo\n`;
+    tsv += `${esc(dayHui.ten_day)}\t${esc(loaiHuiText)}\t${dayHui.so_tien_ky}\t${dayHui.tong_so_phan}\tKỳ ${dayHui.ky_hien_tai}\t${esc(dayHui.trang_thai === 'active' ? 'ĐANG CHẠY' : 'ĐÃ HOÀN THÀNH')}\t${dayHui.tien_thao_moi_ky}\t${esc(dayHui.ngay_bat_dau)}\t${esc(formatDateTime(new Date().toISOString()))}\n`;
+    tsv += `\t\t\t\t\t\t\t\t\n`;
+    
+    tsv += `I. DANH SÁCH HỘI VIÊN & THÔNG TIN HỐT HỤI TỔNG HỢP\t\t\t\t\t\t\t\t\n`;
+    tsv += `STT\tTên hội viên\tSố điện thoại\tSố phần mua\tTrạng thái hốt\tKỳ hốt\tGiá thầu khui (VND)\tThực nhận hốt (VND)\tNgày giờ khui hốt\n`;
+    dayHui.hui_vien.forEach((hv, idx) => {
+      const hotInfo = hv.trang_thai_hot;
+      let hotStatus = "Chưa hốt";
+      let kyHot = "-";
+      let giaHot = "-";
+      let tienNhan = "-";
+      let ngayHot = "-";
+      if (hotInfo.da_hot) {
+        hotStatus = "Đã hốt";
+        kyHot = hotInfo.ky_hot;
+        giaHot = hotInfo.gia_hot;
+        tienNhan = hotInfo.tien_nhan_thuc_te;
+        ngayHot = formatDateTime(hotInfo.ngay_hot);
+      }
+      tsv += `${idx + 1}\t${esc(hv.ten)}\t${esc(hv.sdt || '')}\t${hv.so_phan_mua}\t${esc(hotStatus)}\t${kyHot}\t${giaHot}\t${tienNhan}\t${esc(ngayHot)}\n`;
+    });
+    tsv += `\t\t\t\t\t\t\t\t\n`;
+    
+    tsv += `II. BẢNG TỔNG HỢP KẾT QUẢ KHUI HỤI QUA TỪNG KỲ\t\t\t\t\t\t\t\t\n`;
+    tsv += `Kỳ khui\tNgười hốt kỳ này\tGiá thầu khui (VND)\tTổng gom hụi chết (VND)\tTổng gom hụi sống (VND)\tTiền thảo trích (VND)\tThực nhận giao hội viên (VND)\tThời gian khui\n`;
+    
+    const maxKhuiKy = dayHui.trang_thai === 'completed' ? dayHui.tong_so_phan : dayHui.ky_hien_tai;
+    
+    for (let k = 1; k <= maxKhuiKy; k++) {
+      const winner = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === k);
+      if (winner) {
+        const hotInfo = winner.trang_thai_hot;
+        const soTienKy = dayHui.so_tien_ky;
+        const soPhanChet = k - 1;
+        const soPhanSong = Math.max(0, dayHui.tong_so_phan - soPhanChet - 1);
+        const deadSum = soPhanChet * soTienKy;
+        const liveSum = soPhanSong * Math.max(0, soTienKy - hotInfo.gia_hot);
+        tsv += `${k}\t${esc(winner.ten)}\t${hotInfo.gia_hot}\t${deadSum}\t${liveSum}\t${dayHui.tien_thao_moi_ky}\t${hotInfo.tien_nhan_thuc_te}\t${esc(formatDateTime(hotInfo.ngay_hot))}\n`;
+      } else {
+        tsv += `${k}\tCHƯA KHUI\t-\t-\t-\t-\t-\t-\n`;
+      }
+    }
+    tsv += `\t\t\t\t\t\t\t\t\n`;
+    
+    tsv += `III. BẢNG CHI TIẾT TRẠNG THÁI ĐÓNG TIỀN QUA TỪNG KỲ\t\t\t\t\t\t\t\t\n`;
+    tsv += `Kỳ khui\tHội viên đóng tiền\tSố điện thoại\tSố phần đóng\tVai trò đóng\tSố tiền cần đóng (VND)\tTrạng thái đóng\tNgày giờ đóng tiền\n`;
+    
+    for (let k = 1; k <= maxKhuiKy; k++) {
+      const winner = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === k);
+      const giaThauK = winner ? winner.trang_thai_hot.gia_hot : 0;
+      
+      dayHui.hui_vien.forEach(hv => {
+        const payment = hv.lich_su_dong.find(p => p.ky === k);
+        const daDong = payment ? payment.da_dong : false;
+        const laWinner = winner && winner.id === hv.id;
+        const daHotTruocDay = hv.trang_thai_hot.da_hot && hv.trang_thai_hot.ky_hot < k;
+        
+        let role = "Hụi sống";
+        if (laWinner) {
+          role = "Người hốt kỳ này";
+        } else if (daHotTruocDay) {
+          role = `Hụi chết (Hốt kỳ ${hv.trang_thai_hot.ky_hot})`;
+        }
+        
+        let statusText = "";
+        let ngayDongStr = "-";
+        if (laWinner) {
+          statusText = "Được nhận tiền hốt";
+        } else if (daDong && payment) {
+          statusText = "Đã đóng";
+          ngayDongStr = formatDateTime(payment.ngay_dong);
+        } else {
+          statusText = "Chờ đóng";
+        }
+        
+        const tienPhaiDong = calculateTienPhaiDong(hv, dayHui, k, giaThauK);
+        
+        tsv += `${k}\t${esc(hv.ten)}\t${esc(hv.sdt || '')}\t${hv.so_phan_mua}\t${esc(role)}\t${tienPhaiDong}\t${esc(statusText)}\t${esc(ngayDongStr)}\n`;
+      });
+    }
+    tsv += `\t\t\t\t\t\t\t\t\n`;
+    
+    tsv += `IV. TỔNG KẾT TÀI CHÍNH TÍCH LŨY\t\t\t\t\t\t\t\t\n`;
+    const hoanThanhKy = dayHui.hui_vien.filter(hv => hv.trang_thai_hot.da_hot).length;
+    const totalCommissionLine = hoanThanhKy * dayHui.tien_thao_moi_ky;
+    
+    tsv += `Tổng số kỳ đã khui hoàn tất\t${hoanThanhKy}\tkỳ\t\t\t\t\t\n`;
+    tsv += `Tổng tiền thảo đã thu chủ thảo\t${totalCommissionLine}\tVND\t\t\t\t\t\n`;
+    tsv += `Báo cáo xuất từ Phần Mềm Chủ Thảo Quản Lý Hụi - Excel CSV UTF-16 LE bảo chứng thời gian thực.\t\t\t\t\t\t\t\n`;
+
+    const filename = `TinhTrangDongHui_${dayHui.ten_day.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+    handleExportCSV(filename, tsv);
+  };
+
+  // 2. Tải báo cáo chi tiết kỳ hiện tại của dây hụi
+  const downloadRoundReport = (dayHui) => {
+    const targetKy = dayHui.ky_hien_tai;
+    const loaiHuiText = { daily: 'Ngày', weekly: 'Tuần', monthly: 'Tháng' }[dayHui.loai_hui] || 'Kỳ';
+    const esc = (val) => '"' + String(val || '').replace(/"/g, '""') + '"';
+
+    const formatDateTime = (isoString) => {
+      if (!isoString) return '-';
+      const date = new Date(isoString);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    };
+
+    let tsv = "";
+    tsv += `BÁO CÁO CHI TIẾT TÌNH TRẠNG KỲ HỤI HIỆN TẠI (KỲ ${targetKy})\t\t\t\t\t\t\n`;
+    tsv += `Dây hụi\tChu kỳ\tKỳ hiện tại\tTổng số phần\tNgày xuất báo cáo\t\t\t\n`;
+    tsv += `${esc(dayHui.ten_day)}\tHụi ${esc(loaiHuiText)}\tKỳ ${targetKy}/${dayHui.tong_so_phan}\t${dayHui.tong_so_phan}\t${esc(formatDateTime(new Date().toISOString()))}\t\t\t\n`;
+    tsv += `\t\t\t\t\t\t\n`;
+    
+    tsv += `I. THÔNG TIN KHUI HỤI KỲ NÀY\t\t\t\t\t\t\n`;
+    const winner = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === targetKy);
+    
+    if (winner) {
+      const hotInfo = winner.trang_thai_hot;
+      const soTienKy = dayHui.so_tien_ky;
+      const soPhanChet = targetKy - 1;
+      const soPhanSong = Math.max(0, dayHui.tong_so_phan - soPhanChet - 1);
+      const deadSum = soPhanChet * soTienKy;
+      const liveSum = soPhanSong * Math.max(0, soTienKy - hotInfo.gia_hot);
+      const grossSum = deadSum + liveSum;
+
+      tsv += `Trạng thái khui\tHội viên hốt\tGiá thầu khui (VND)\tTổng gom hụi chết (VND)\tTổng gom hụi sống (VND)\tTiền thảo trích (VND)\tThực nhận giao hội viên (VND)\tThời gian khui\n`;
+      tsv += `ĐÃ KHUI\t${esc(winner.ten)}\t${hotInfo.gia_hot}\t${deadSum}\t${liveSum}\t${dayHui.tien_thao_moi_ky}\t${hotInfo.tien_nhan_thuc_te}\t${esc(formatDateTime(hotInfo.ngay_hot))}\n`;
+    } else {
+      tsv += `Trạng thái khui\tLưu ý\t\t\t\t\t\n`;
+      tsv += `CHƯA KHUI KỲ NÀY\tCần thực hiện Khai Kỳ Mới để cập nhật thông tin thầu và tính tiền sống/chết.\t\t\t\t\t\n`;
+    }
+    
+    tsv += `\t\t\t\t\t\t\n`;
+    tsv += `II. DANH SÁCH CHI TIẾT ĐÓNG TIỀN KỲ NÀY\t\t\t\t\t\t\n`;
+    tsv += `STT\tTên hội viên\tSố điện thoại\tSố phần đóng\tVai trò đóng\tSố tiền cần đóng (VND)\tTrạng thái đóng\tNgày giờ đóng tiền\n`;
+    
+    const giaThauKyNay = winner ? winner.trang_thai_hot.gia_hot : 0;
+    
+    dayHui.hui_vien.forEach((hv, index) => {
+      const payment = hv.lich_su_dong.find(p => p.ky === targetKy);
+      const daDong = payment ? payment.da_dong : false;
+      
+      const laNguoiHotKyNay = winner && winner.id === hv.id;
+      const daHotTruocDay = hv.trang_thai_hot.da_hot && hv.trang_thai_hot.ky_hot < targetKy;
+      
+      let loaiHuiNguoiChoi = "Hụi sống";
+      if (laNguoiHotKyNay) {
+        loaiHuiNguoiChoi = "Hốt kỳ này";
+      } else if (daHotTruocDay) {
+        loaiHuiNguoiChoi = `Hụi chết (Hốt kỳ ${hv.trang_thai_hot.ky_hot})`;
+      }
+      
+      const soTienPhaiDong = calculateTienPhaiDong(hv, dayHui, targetKy, giaThauKyNay);
+      
+      let statusStr = "";
+      let ngayDongStr = "-";
+      if (laNguoiHotKyNay) {
+        statusStr = "Được nhận tiền hốt";
+      } else if (daDong) {
+        statusStr = "Đã đóng";
+        ngayDongStr = formatDateTime(payment.ngay_dong);
+      } else {
+        statusStr = "Chờ đóng";
+      }
+      
+      tsv += `${index + 1}\t${esc(hv.ten)}\t${esc(hv.sdt || '')}\t${hv.so_phan_mua}\t${esc(loaiHuiNguoiChoi)}\t${soTienPhaiDong}\t${esc(statusStr)}\t${esc(ngayDongStr)}\n`;
+    });
+    
+    tsv += `\t\t\t\t\t\t\n`;
+    tsv += `Báo cáo xuất từ Phần Mềm Chủ Thảo Quản Lý Hụi - Excel CSV UTF-16 LE bảo chứng thời gian thực.\t\t\t\t\t\t\t\n`;
+
+    const filename = `BaoCaoKy_${targetKy}_${dayHui.ten_day.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+    handleExportCSV(filename, tsv);
+  };
+
+  // 3. Đóng tiền nhanh cho toàn bộ hội viên chưa đóng trong kỳ hiện tại
+  const markAllPaidCurrentRound = () => {
+    if (!selectedHuiId) return;
+    const dayHui = huiData.find(item => item.id === selectedHuiId);
+    if (!dayHui) return;
+
+    const targetKy = dayHui.ky_hien_tai;
+    const nguoiHotKyNay = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === targetKy);
+    const giaThauKyNay = nguoiHotKyNay ? nguoiHotKyNay.trang_thai_hot.gia_hot : 0;
+    
+    let countPaid = 0;
+    const nowISO = new Date().toISOString();
+
+    setHuiData(prevData => {
+      return prevData.map(day => {
+        if (day.id !== selectedHuiId) return day;
+
+        const updatedHuiVien = day.hui_vien.map(hv => {
+          const hotKyNay = hv.trang_thai_hot.da_hot && hv.trang_thai_hot.ky_hot === targetKy;
+          if (hotKyNay) return hv;
+
+          const updatedHistory = hv.lich_su_dong.map(historyItem => {
+            if (historyItem.ky !== targetKy) return historyItem;
+            if (historyItem.da_dong) return historyItem;
+
+            const soTienPhaiDong = calculateTienPhaiDong(hv, day, targetKy, giaThauKyNay);
+            countPaid++;
+            return {
+              ...historyItem,
+              da_dong: true,
+              so_tien_da_dong: soTienPhaiDong,
+              ngay_dong: nowISO
+            };
+          });
+
+          return { ...hv, lich_su_dong: updatedHistory };
+        });
+
+        return { ...day, hui_vien: updatedHuiVien };
+      });
+    });
+
+    setTimeout(() => {
+      Alert.alert("Thành công", `Đã đóng nhanh tiền thành công cho các hội viên chờ đóng kỳ này!`);
+    }, 100);
   };
 
   // Thay đổi trạng thái đóng tiền của hụi viên trong kỳ hiện tại
@@ -388,6 +667,141 @@ export default function App() {
                 </TouchableOpacity>
               )}
 
+              {/* Hàng nút Đóng Nhanh Tất Cả & Tải Báo Cáo Kỳ */}
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+                <TouchableOpacity 
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    backgroundColor: '#10B981',
+                    borderRadius: 14,
+                    paddingVertical: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6
+                  }}
+                  onPress={markAllPaidCurrentRound}
+                >
+                  <Check color="#fff" size={16} />
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Đóng Nhanh Tất Cả</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    backgroundColor: '#6366F1',
+                    borderRadius: 14,
+                    paddingVertical: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6
+                  }}
+                  onPress={() => downloadRoundReport(activeHui)}
+                >
+                  <Download color="#fff" size={16} />
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>Tải Báo Cáo Kỳ</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Bảng Lịch Sử Khui Hụi Qua Từng Đợt (Căn Cứ Đóng Hụi) */}
+              <View style={{ marginTop: 10, marginBottom: 14, flexDirection: 'row', alignItems: 'center' }}>
+                <Calendar color="#F59E0B" size={20} style={{ marginRight: 8 }} />
+                <Text style={styles.sectionTitle}>Lịch Sử Khui Hụi Từng Đợt (Căn Cứ Đóng)</Text>
+              </View>
+
+              <View style={{ marginBottom: 25 }}>
+                {(() => {
+                  const historyList = [];
+                  for (let k = 1; k <= activeHui.tong_so_phan; k++) {
+                    const winner = activeHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === k);
+                    if (winner) {
+                      historyList.push({ ky: k, winner });
+                    }
+                  }
+                  historyList.sort((a, b) => b.ky - a.ky);
+
+                  if (historyList.length === 0) {
+                    return (
+                      <View style={{
+                        backgroundColor: '#151E33', borderWidth: 1, borderColor: '#233256', borderStyle: 'dashed',
+                        borderRadius: 16, padding: 20, alignItems: 'center', justifyContent: 'center'
+                      }}>
+                        <Text style={{ color: '#6B7280', fontSize: 13, textAlign: 'center' }}>
+                          Chưa có đợt khui hụi nào được thực hiện. Bấm "Khai Kỳ Mới" để khui đợt đầu.
+                        </Text>
+                      </View>
+                    );
+                  }
+
+                  return historyList.map((item) => {
+                    const k = item.ky;
+                    const winner = item.winner;
+                    const giaHot = Number(winner.trang_thai_hot.gia_hot || 0);
+                    const thucNhan = Number(winner.trang_thai_hot.tien_nhan_thuc_te || 0);
+                    const ngayHot = winner.trang_thai_hot.ngay_hot ? winner.trang_thai_hot.ngay_hot.split('T')[0] : '-';
+                    const soTienKy = Number(activeHui.so_tien_ky);
+                    const tienDongSong = soTienKy - giaHot;
+
+                    return (
+                      <View key={k} style={{
+                        backgroundColor: '#151E33', borderColor: '#233256', borderWidth: 1,
+                        borderRadius: 16, padding: 14, marginBottom: 12
+                      }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+                          <View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                              <View style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                <Text style={{ color: '#F59E0B', fontSize: 10, fontWeight: '700' }}>Kỳ Khui {k}</Text>
+                              </View>
+                              <Text style={{ color: '#9CA3AF', fontSize: 10 }}>⏱️ {ngayHot}</Text>
+                            </View>
+                            <Text style={{ fontSize: 13, fontWeight: '700', color: '#fff', marginTop: 6 }}>
+                              Hội viên hốt: <Text style={{ color: '#6366F1' }}>{winner.ten}</Text>
+                            </Text>
+                          </View>
+                        </View>
+
+                        <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginVertical: 8 }} />
+
+                        <View style={{ gap: 4 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ color: '#9CA3AF', fontSize: 11 }}>Mức thầu khui (tiền lỗ):</Text>
+                            <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '700' }}>-{formatMoney(giaHot)}</Text>
+                          </View>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ color: '#9CA3AF', fontSize: 11 }}>Thực nhận giao hụi viên:</Text>
+                            <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '700' }}>{formatMoney(thucNhan)}</Text>
+                          </View>
+                          
+                          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)', marginVertical: 6 }} />
+                          
+                          <View style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' }}>
+                            <Text style={{ fontSize: 9, fontWeight: '700', color: '#6B7280', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+                              Căn cứ đóng hụi kỳ này:
+                            </Text>
+                            <View style={{ gap: 3 }}>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '600' }}>🟢 Hụi sống:</Text>
+                                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>
+                                  {formatMoney(soTienKy)} - {formatMoney(giaHot)} = <Text style={{ color: '#10B981' }}>{formatMoney(tienDongSong)}</Text>
+                                </Text>
+                              </View>
+                              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Text style={{ color: '#6B7280', fontSize: 11, fontWeight: '600' }}>🔴 Hụi chết:</Text>
+                                <Text style={{ color: '#9CA3AF', fontSize: 10, fontWeight: '600' }}>
+                                  Đóng đủ 100% gốc = <Text style={{ color: '#fff' }}>{formatMoney(soTienKy)}</Text>
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  });
+                })()}
+              </View>
+
               {/* Danh sách thành viên hụi */}
               <View style={styles.sectionHeaderContainer}>
                 <Users color="#6366F1" size={20} style={{ marginRight: 8 }} />
@@ -600,11 +1014,36 @@ export default function App() {
                       onPress={() => setSelectedHuiId(item.id)}
                     >
                       <View style={styles.cardHeader}>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.cardName}>{item.ten_day}</Text>
-                          <View style={styles.cardSubDetails}>
-                            <Calendar color="#9CA3AF" size={14} style={{ marginRight: 4 }} />
-                            <Text style={styles.cardDate}>{item.ngay_bat_dau}</Text>
+                        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                          <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                              <Text style={[styles.cardName, { flexShrink: 1, marginRight: 4 }]} numberOfLines={1}>
+                                {item.ten_day}
+                              </Text>
+                              <TouchableOpacity
+                                style={{
+                                  backgroundColor: 'rgba(99, 102, 241, 0.15)',
+                                  borderWidth: 1,
+                                  borderColor: 'rgba(99, 102, 241, 0.3)',
+                                  width: 26,
+                                  height: 26,
+                                  borderRadius: 6,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                                onPress={(e) => {
+                                  e.stopPropagation();
+                                  downloadLineReport(item);
+                                }}
+                                activeOpacity={0.7}
+                              >
+                                <Download color="#6366F1" size={12} />
+                              </TouchableOpacity>
+                            </View>
+                            <View style={styles.cardSubDetails}>
+                              <Calendar color="#9CA3AF" size={14} style={{ marginRight: 4 }} />
+                              <Text style={styles.cardDate}>{item.ngay_bat_dau}</Text>
+                            </View>
                           </View>
                         </View>
                         <ChevronRight color="#6366F1" size={20} />

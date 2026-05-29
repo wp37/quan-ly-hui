@@ -1141,6 +1141,15 @@
           </button>
         </div>
 
+        <!-- Lịch Sử Khui Hụi Qua Từng Đợt (Căn Cứ Đóng Hụi) -->
+        <div class="section-header" style="margin-top: 25px;">
+          <svg class="svg-icon" style="color: var(--warning);" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span class="section-title">Lịch Sử Khui Hụi Từng Đợt (Căn Cứ Đóng)</span>
+        </div>
+        <div id="khui-history-container" style="margin-bottom: 25px;">
+          <!-- JS sẽ render lịch sử khui hụi vào đây -->
+        </div>
+
         <!-- Danh sách hụi viên -->
         <div class="section-header">
           <svg class="svg-icon" style="color: var(--primary);" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
@@ -1771,6 +1780,7 @@
       document.getElementById('detail-progress-fill').style.width = `${percent}%`;
 
       renderMembersList(dayHui);
+      renderKhuiHistory(dayHui);
     }
 
     function goHome() {
@@ -1852,6 +1862,107 @@
           </div>
         `;
 
+        container.appendChild(card);
+      });
+    }
+
+    // Vẽ danh sách lịch sử khui hụi từng đợt để làm căn cứ đóng hụi sống/chết
+    function renderKhuiHistory(dayHui) {
+      const container = document.getElementById('khui-history-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      let hasHistory = false;
+      const historyList = [];
+      
+      // Lấy tất cả các đợt đã khui hụi
+      for (let k = 1; k <= dayHui.tong_so_phan; k++) {
+        const winner = dayHui.hui_vien.find(h => h.trang_thai_hot.da_hot && h.trang_thai_hot.ky_hot === k);
+        if (winner) {
+          historyList.push({ ky: k, winner, hotInfo: winner.trang_thai_hot });
+          hasHistory = true;
+        }
+      }
+
+      if (!hasHistory) {
+        container.innerHTML = `
+          <div style="background-color: var(--card-bg); border: 1px dashed var(--card-border); border-radius: 16px; padding: 20px; text-align: center; color: var(--text-dark); font-size: 13px;">
+            <svg class="svg-icon" viewBox="0 0 24 24" style="width: 28px; height: 28px; color: var(--text-dark); margin-bottom: 8px; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            <div>Chưa có đợt khui hụi nào được thực hiện.</div>
+            <div style="font-size: 11px; margin-top: 4px; color: var(--text-muted);">Bấm nút "Khai Kỳ Mới" phía trên để tiến hành khui đợt đầu tiên.</div>
+          </div>
+        `;
+        return;
+      }
+
+      // Sắp xếp giảm dần theo số kỳ (kỳ mới nhất lên đầu để dễ xem)
+      historyList.sort((a, b) => b.ky - a.ky);
+
+      historyList.forEach(item => {
+        const k = item.ky;
+        const winner = item.winner;
+        const hotInfo = item.hotInfo;
+        const giaHot = hotInfo.gia_hot;
+        const thucNhan = hotInfo.tien_nhan_thuc_te;
+        const ngayHot = formatDateTime(hotInfo.ngay_hot);
+
+        const soTienKy = dayHui.so_tien_ky;
+        const tienDongSong = soTienKy - giaHot;
+
+        const card = document.createElement('div');
+        card.style.cssText = `
+          background-color: var(--card-bg);
+          border: 1px solid var(--card-border);
+          border-radius: 16px;
+          padding: 14px 16px;
+          margin-bottom: 12px;
+        `;
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="background-color: var(--warning-bg); color: var(--warning); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">Kỳ Khui ${k}</span>
+                <span style="color: var(--text-muted); font-size: 11px;">⏱️ ${ngayHot}</span>
+              </div>
+              <div style="font-size: 14px; font-weight: 700; color: #fff; margin-top: 6px;">
+                Hội viên hốt: <span style="color: var(--primary);">${winner.ten}</span>
+              </div>
+            </div>
+            <button class="btn-card-action" onclick="showReceipt('${dayHui.id}', ${k}, '${winner.id}')" title="Xem biên nhận kỳ này" style="width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+              🧾
+            </button>
+          </div>
+
+          <div style="height: 1px; background-color: rgba(255,255,255,0.05); margin: 10px 0;"></div>
+
+          <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: var(--text-muted);">Mức thầu khui (tiền lỗ):</span>
+              <span style="color: var(--warning); font-weight: 700;">-${formatMoney(giaHot)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: var(--text-muted);">Thực nhận giao hụi viên:</span>
+              <span style="color: var(--success); font-weight: 700;">${formatMoney(thucNhan)}</span>
+            </div>
+            
+            <div style="height: 1px; background-color: rgba(255,255,255,0.05); margin: 6px 0;"></div>
+            
+            <div style="background-color: rgba(255,255,255,0.02); border-radius: 10px; padding: 10px; border: 1px solid rgba(255,255,255,0.03);">
+              <div style="font-size: 10px; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Căn cứ đóng hụi kỳ này:</div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: var(--success); font-weight: 600;">🟢 Hụi sống:</span>
+                  <span style="color: #fff; font-weight: 600;">${formatMoney(soTienKy)} - ${formatMoney(giaHot)} = <span style="color: var(--success);">${formatMoney(tienDongSong)}</span></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="color: var(--text-dark); font-weight: 600;">🔴 Hụi chết:</span>
+                  <span style="color: var(--text-muted); font-weight: 600;">Đóng đủ 100% gốc = <span style="color: #fff;">${formatMoney(soTienKy)}</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
         container.appendChild(card);
       });
     }
@@ -2153,22 +2264,43 @@
           }
         }
         
-        members.push({
-          id: `hv_${Date.now()}_${idx}`,
-          ten: name || `Hụi viên ${idx}`,
-          sdt: sdt,
-          so_phan_mua: shares,
-          trang_thai_hot: {
-            da_hot: false,
-            ky_hot: null,
-            gia_hot: 0,
-            ngay_hot: null,
-            tien_nhan_thuc_te: 0
-          },
-          lich_su_dong: [
-            { ky: 1, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
-          ]
-        });
+        if (shares > 1) {
+          for (let p = 1; p <= shares; p++) {
+            members.push({
+              id: `hv_${Date.now()}_${idx}_${p}`,
+              ten: `${name} (Phần ${p})`,
+              sdt: sdt,
+              so_phan_mua: 1,
+              trang_thai_hot: {
+                da_hot: false,
+                ky_hot: null,
+                gia_hot: 0,
+                ngay_hot: null,
+                tien_nhan_thuc_te: 0
+              },
+              lich_su_dong: [
+                { ky: 1, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+              ]
+            });
+          }
+        } else {
+          members.push({
+            id: `hv_${Date.now()}_${idx}`,
+            ten: name || `Hụi viên ${idx}`,
+            sdt: sdt,
+            so_phan_mua: 1,
+            trang_thai_hot: {
+              da_hot: false,
+              ky_hot: null,
+              gia_hot: 0,
+              ngay_hot: null,
+              tien_nhan_thuc_te: 0
+            },
+            lich_su_dong: [
+              { ky: 1, da_dong: false, so_tien_da_dong: 0, ngay_dong: null }
+            ]
+          });
+        }
       });
       return members;
     }
@@ -2516,6 +2648,36 @@
           link.click();
           document.body.removeChild(link);
           URL.revokeObjectURL(url);
+        }
+      }
+
+      // Tự động sao chép báo cáo vào clipboard làm dự phòng khi chạy trên điện thoại di động
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        try {
+          const copyText = (text) => {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              return navigator.clipboard.writeText(text);
+            } else {
+              const textArea = document.createElement("textarea");
+              textArea.value = text;
+              textArea.style.position = "fixed";
+              textArea.style.opacity = "0";
+              document.body.appendChild(textArea);
+              textArea.select();
+              document.execCommand('copy');
+              document.body.removeChild(textArea);
+              return Promise.resolve();
+            }
+          };
+
+          copyText(tsvContent).then(() => {
+            showToast("📱 Trình duyệt điện thoại: Đã tự động copy báo cáo vào bộ nhớ tạm!");
+          }).catch(() => {
+            // Thất bại thầm lặng
+          });
+        } catch (err) {
+          console.error("Auto copy failed:", err);
         }
       }
     }

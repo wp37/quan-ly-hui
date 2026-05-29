@@ -34,6 +34,36 @@ export function downloadCSVFile(filename, tsvContent) {
       URL.revokeObjectURL(url);
     }
   }
+
+  // Tự động sao chép báo cáo vào clipboard làm dự phòng khi chạy trên điện thoại di động
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (isMobile) {
+    try {
+      const copyText = (text) => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          return navigator.clipboard.writeText(text);
+        } else {
+          const textArea = document.createElement("textarea");
+          textArea.value = text;
+          textArea.style.position = "fixed";
+          textArea.style.opacity = "0";
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          return Promise.resolve();
+        }
+      };
+
+      copyText(tsvContent).then(() => {
+        alert("📱 Trình duyệt điện thoại: Đã tự động copy báo cáo Excel vào bộ nhớ tạm (Clipboard) của bạn!");
+      }).catch(() => {
+        // Thất bại thầm lặng
+      });
+    } catch (err) {
+      console.error("Auto copy failed:", err);
+    }
+  }
 }
 
 // 1. Tải báo cáo tình trạng đóng hụi / lịch sử dây hụi chuẩn Excel
