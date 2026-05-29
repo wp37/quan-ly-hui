@@ -42,12 +42,17 @@ export function calculateTienPhaiDong(hv, dayHui, targetKy, allHuiVien = [], gia
   const soTienKy = Number(dayHui.so_tien_ky || 0);
   const soPhanMua = Number(hv.so_phan_mua || 1);
 
-  // Hụi chết (đã hốt trước kỳ targetKy hoặc đang hốt kỳ này)
+  // Hụi chết: đã hốt TRƯỚC kỳ targetKy → đóng đủ 100% số tiền kỳ
   const daHotTruocKy = hv.da_hot && hv.ky_hot < targetKy;
-  const laNguoiHotKyNay = hv.da_hot && hv.ky_hot === targetKy;
-
-  if (daHotTruocKy || laNguoiHotKyNay) {
+  if (daHotTruocKy) {
     return soTienKy * soPhanMua;
+  }
+
+  // Người hốt kỳ này: vẫn đóng như HỤI SỐNG (trừ giá thầu)
+  // Chỉ tính chết từ kỳ SAU khi đã hốt
+  const laNguoiHotKyNay = hv.da_hot && hv.ky_hot === targetKy;
+  if (laNguoiHotKyNay) {
+    return Math.max(0, soTienKy - Number(giaThauKyNay)) * soPhanMua;
   }
 
   // Hụi sống: Giảm trừ theo giá thầu khui của kỳ đó

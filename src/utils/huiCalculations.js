@@ -15,15 +15,17 @@
 export const calculateTienPhaiDong = (huiVien, dayHui, targetKy, giaHotKyNay = 0) => {
   const { so_tien_ky, hui_vien } = dayHui;
 
-  // 1. Kiểm tra xem hụi viên này đã hốt hụi TRƯỚC kỳ targetKy hay chưa
+  // 1. Hụi chết: đã hốt TRƯỚC kỳ targetKy → đóng đủ 100% số tiền kỳ
   const daHotTruocKy = huiVien.trang_thai_hot.da_hot && huiVien.trang_thai_hot.ky_hot < targetKy;
-  
-  // 2. Kiểm tra xem hụi viên này chính là người hốt trong kỳ targetKy
-  const laNguoiHotKyNay = huiVien.trang_thai_hot.da_hot && huiVien.trang_thai_hot.ky_hot === targetKy;
-
-  if (daHotTruocKy || laNguoiHotKyNay) {
-    // Hụi chết: Đóng 100% số tiền kỳ
+  if (daHotTruocKy) {
     return so_tien_ky * huiVien.so_phan_mua;
+  }
+
+  // 2. Người hốt kỳ này: vẫn đóng như HỤI SỐNG (trừ giá thầu)
+  // Chỉ tính chết từ kỳ SAU khi đã hốt
+  const laNguoiHotKyNay = huiVien.trang_thai_hot.da_hot && huiVien.trang_thai_hot.ky_hot === targetKy;
+  if (laNguoiHotKyNay) {
+    return Math.max(0, so_tien_ky - giaHotKyNay) * huiVien.so_phan_mua;
   }
 
   // Hụi sống: Được giảm trừ dựa trên giá thầu của kỳ đó
