@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 import Auth from './components/Auth';
 import Dashboard from './components/Dashboard';
 import DetailScreen from './components/DetailScreen';
@@ -415,6 +415,56 @@ export default function App() {
     await fetchData();
     alert('Đã xóa hoàn toàn dây hụi khỏi cơ sở dữ liệu!');
   };
+
+  // Supabase not configured -> Show setup guide
+  if (!isSupabaseConfigured) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        minHeight: '100vh', padding: '40px 24px', textAlign: 'center', gap: '20px'
+      }}>
+        <div style={{ fontSize: '64px', filter: 'drop-shadow(0 4px 15px rgba(212,175,55,0.4))' }}>🪙</div>
+        <h1 style={{
+          fontSize: '28px', fontWeight: '800',
+          background: 'linear-gradient(135deg, #FFE066, #D4AF37, #AA7C11)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
+        }}>Quản Lý Hụi Chủ Thảo</h1>
+        <div style={{
+          background: '#16140F', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '20px',
+          padding: '24px', maxWidth: '380px', width: '100%', textAlign: 'left'
+        }}>
+          <h2 style={{ fontSize: '16px', color: '#FFE066', marginBottom: '12px', fontWeight: '700' }}>
+            ⚙️ Cấu hình Supabase để bắt đầu
+          </h2>
+          <p style={{ fontSize: '13px', color: '#A8A29A', lineHeight: '1.6', marginBottom: '16px' }}>
+            Ứng dụng cần kết nối cơ sở dữ liệu Supabase. Vui lòng thiết lập 2 biến môi trường trên Vercel:
+          </p>
+          <div style={{
+            background: '#0E0D0A', borderRadius: '12px', padding: '14px',
+            fontFamily: 'monospace', fontSize: '11px', lineHeight: '1.8',
+            border: '1px solid #2D2517', color: '#FAF8F5'
+          }}>
+            <div style={{ color: '#D4AF37' }}>VITE_SUPABASE_URL</div>
+            <div style={{ color: '#736C62', marginBottom: '8px' }}>= https://xxx.supabase.co</div>
+            <div style={{ color: '#D4AF37' }}>VITE_SUPABASE_ANON_KEY</div>
+            <div style={{ color: '#736C62' }}>= eyJhbGciOi...</div>
+          </div>
+          <p style={{ fontSize: '11px', color: '#736C62', marginTop: '14px', lineHeight: '1.5' }}>
+            Sau khi thêm xong, vào tab <strong style={{ color: '#D4AF37' }}>Deployments</strong> trên Vercel
+            → nhấn <strong style={{ color: '#D4AF37' }}>Redeploy</strong> để kích hoạt.
+          </p>
+        </div>
+        <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer"
+          style={{
+            background: 'linear-gradient(135deg, #FFE066, #D4AF37)', color: '#0E0D0A',
+            padding: '12px 28px', borderRadius: '14px', fontWeight: '700', fontSize: '14px',
+            textDecoration: 'none', boxShadow: '0 4px 15px rgba(212,175,55,0.3)',
+            transition: 'transform 0.2s'
+          }}
+        >Mở Supabase Dashboard</a>
+      </div>
+    );
+  }
 
   // Loading skeleton screen
   if (loadingAuth) {
