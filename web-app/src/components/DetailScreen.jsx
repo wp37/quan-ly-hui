@@ -306,6 +306,34 @@ export default function DetailScreen({
               <div className="progress-bar-fill" style={{ width: `${percent}%` }}></div>
             </div>
           </div>
+
+          {dayHui.ngay_bat_dau && (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              marginTop: '16px',
+              paddingTop: '12px',
+              borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+              fontSize: '12px',
+              color: 'var(--text-muted)'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>📅 Ngày bắt đầu:</span>
+                <span style={{ color: '#fff', fontWeight: '600' }}>
+                  {new Date(dayHui.ngay_bat_dau).toLocaleDateString('vi-VN')}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>🔄 Lịch khui hụi:</span>
+                <span style={{ color: 'var(--warning)', fontWeight: '700' }}>
+                  {dayHui.loai_hui === 'daily' && 'Hàng ngày'}
+                  {dayHui.loai_hui === 'weekly' && `Mỗi ${['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][new Date(dayHui.ngay_bat_dau).getDay()]} hàng tuần`}
+                  {dayHui.loai_hui === 'monthly' && `Ngày ${new Date(dayHui.ngay_bat_dau).getDate()} hàng tháng`}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Khai kỳ mới button */}

@@ -48,8 +48,8 @@ export default function Auth() {
   return (
     <div className="auth-container">
       <div className="auth-header">
-        <h1 className="auth-logo">Chủ Thảo Hụi</h1>
-        <p className="auth-subtitle">Quản lý dây hụi thông minh thời gian thực</p>
+        <h1 className="auth-logo">Quản Lý Hụi</h1>
+        <p className="auth-subtitle">Phần mềm quản lý hụi chuyên nghiệp</p>
       </div>
 
       <div className="auth-card">
@@ -152,6 +152,24 @@ export default function Auth() {
             {isSignUp ? 'Đăng nhập ngay' : 'Đăng ký miễn phí'}
           </button>
         </div>
+      </div>
+
+      <div style={{
+        textAlign: 'center',
+        marginTop: '24px',
+        fontSize: '11px',
+        color: '#736C62',
+        lineHeight: '1.6'
+      }}>
+        <p style={{ fontWeight: '600', color: '#A8A29A' }}>Tạo bởi Võ Ngọc Tùng</p>
+        <a
+          href="https://zalo.me/0814666040"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: '#D4AF37', textDecoration: 'none', fontWeight: '600' }}
+        >
+          Zalo: 0814666040
+        </a>
       </div>
     </div>
   );

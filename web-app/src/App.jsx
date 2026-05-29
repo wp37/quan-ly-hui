@@ -120,6 +120,7 @@ export default function App() {
         tong_so_phan: newHui.hui_vien.reduce((acc, m) => acc + m.so_phan_mua, 0),
         ky_hien_tai: 1,
         tien_thao_moi_ky: newHui.tien_thao_moi_ky,
+        ngay_bat_dau: newHui.ngay_bat_dau || new Date().toISOString().split('T')[0],
         trang_thai: 'active'
       })
       .select()

@@ -44,8 +44,11 @@ export function downloadLineReport(dayHui, allHuiVien, lichSuDong) {
   let tsv = "";
   tsv += `BÁO CÁO TOÀN BỘ LỊCH SỬ DÂY HỤI\t\t\t\t\t\t\t\t\n`;
   tsv += `THÔNG TIN CHUNG DÂY HỤI\t\t\t\t\t\t\t\t\n`;
-  tsv += `Tên dây hụi\tChu kỳ đóng\tSố tiền một kỳ (VND)\tTổng số phần hụi\tKỳ hiện tại\tTrạng thái dây\tTiền thảo mỗi kỳ (VND)\tNgày bắt đầu\tThời gian xuất báo cáo\n`;
-  tsv += `${esc(dayHui.ten_day)}\t${esc(loaiHuiText)}\t${dayHui.so_tien_ky}\t${dayHui.tong_so_phan}\tKỳ ${dayHui.ky_hien_tai}\t${esc(dayHui.trang_thai === 'active' ? 'ĐANG CHẠY' : 'ĐÃ HOÀN THÀNH')}\t${dayHui.tien_thao_moi_ky}\t${esc(dayHui.ngay_bat_dau)}\t${esc(formatDateTime(new Date().toISOString()))}\n`;
+  tsv += `Tên dây hụi\tChu kỳ đóng\tSố tiền một kỳ (VND)\tTổng số phần hụi\tKỳ hiện tại\tTrạng thái dây\tTiền thảo mỗi kỳ (VND)\tNgày bắt đầu\tLịch khui hụi\tThời gian xuất báo cáo\n`;
+  const scheduleText = dayHui.loai_hui === 'daily' ? 'Hàng ngày' :
+    dayHui.loai_hui === 'weekly' ? `Mỗi ${['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][new Date(dayHui.ngay_bat_dau).getDay()]} hàng tuần` :
+    `Ngày ${new Date(dayHui.ngay_bat_dau).getDate()} hàng tháng`;
+  tsv += `${esc(dayHui.ten_day)}\t${esc(loaiHuiText)}\t${dayHui.so_tien_ky}\t${dayHui.tong_so_phan}\tKỳ ${dayHui.ky_hien_tai}\t${esc(dayHui.trang_thai === 'active' ? 'ĐANG CHẠY' : 'ĐÃ HOÀN THÀNH')}\t${dayHui.tien_thao_moi_ky}\t${esc(dayHui.ngay_bat_dau)}\t${esc(scheduleText)}\t${esc(formatDateTime(new Date().toISOString()))}\n`;
   tsv += `\t\t\t\t\t\t\t\t\n`;
   
   tsv += `I. DANH SÁCH HỘI VIÊN & THÔNG TIN HỐT HỤI TỔNG HỢP\t\t\t\t\t\t\t\t\n`;
@@ -131,7 +134,7 @@ export function downloadLineReport(dayHui, allHuiVien, lichSuDong) {
   
   tsv += `Tổng số kỳ đã khui hoàn tất\t${hoanThanhKy}\tkỳ\t\t\t\t\t\n`;
   tsv += `Tổng tiền thảo đã thu chủ thảo\t${totalCommissionLine}\tVND\t\t\t\t\t\n`;
-  tsv += `Báo cáo xuất từ Phần Mềm Chủ Thảo Quản Lý Hụi - Excel CSV UTF-16 LE bảo chứng thời gian thực.\t\t\t\t\t\t\t\n`;
+  tsv += `Báo cáo xuất từ Phần Mềm Quản Lý Hụi - Tạo bởi Võ Ngọc Tùng | Zalo: 0814666040\t\t\t\t\t\t\t\n`;
 
   const filename = `TinhTrangDongHui_${dayHui.ten_day.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
   downloadCSVFile(filename, tsv);
@@ -144,8 +147,11 @@ export function downloadRoundReport(dayHui, allHuiVien, lichSuDong, targetKy) {
 
   let tsv = "";
   tsv += `BÁO CÁO CHI TIẾT TÌNH TRẠNG KỲ HỤI HIỆN TẠI (KỲ ${targetKy})\t\t\t\t\t\t\n`;
-  tsv += `Dây hụi\tChu kỳ\tKỳ hiện tại\tTổng số phần\tNgày xuất báo cáo\t\t\t\n`;
-  tsv += `${esc(dayHui.ten_day)}\tHụi ${esc(loaiHuiText)}\tKỳ ${targetKy}/${dayHui.tong_so_phan}\t${dayHui.tong_so_phan}\t${esc(formatDateTime(new Date().toISOString()))}\t\t\t\n`;
+  tsv += `Dây hụi\tChu kỳ\tKỳ hiện tại\tTổng số phần\tNgày bắt đầu\tLịch khui hụi\tNgày xuất báo cáo\t\t\t\n`;
+  const scheduleText = dayHui.loai_hui === 'daily' ? 'Hàng ngày' :
+    dayHui.loai_hui === 'weekly' ? `Mỗi ${['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][new Date(dayHui.ngay_bat_dau).getDay()]} hàng tuần` :
+    `Ngày ${new Date(dayHui.ngay_bat_dau).getDate()} hàng tháng`;
+  tsv += `${esc(dayHui.ten_day)}\tHụi ${esc(loaiHuiText)}\tKỳ ${targetKy}/${dayHui.tong_so_phan}\t${dayHui.tong_so_phan}\t${esc(dayHui.ngay_bat_dau)}\t${esc(scheduleText)}\t${esc(formatDateTime(new Date().toISOString()))}\t\t\t\n`;
   tsv += `\t\t\t\t\t\t\n`;
   
   tsv += `I. THÔNG TIN KHUI HỤI KỲ NÀY\t\t\t\t\t\t\n`;
@@ -203,7 +209,7 @@ export function downloadRoundReport(dayHui, allHuiVien, lichSuDong, targetKy) {
   });
   
   tsv += `\t\t\t\t\t\t\n`;
-  tsv += `Báo cáo xuất từ Phần Mềm Chủ Thảo Quản Lý Hụi - Excel CSV UTF-16 LE bảo chứng thời gian thực.\t\t\t\t\t\t\t\n`;
+  tsv += `Báo cáo xuất từ Phần Mềm Quản Lý Hụi - Tạo bởi Võ Ngọc Tùng | Zalo: 0814666040\t\t\t\t\t\t\t\n`;
 
   const filename = `BaoCaoKy_${targetKy}_${dayHui.ten_day.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
   downloadCSVFile(filename, tsv);

@@ -35,6 +35,7 @@ export default function Dashboard({
   const [amount, setAmount] = useState('');
   const [commission, setCommission] = useState('');
   const [huiType, setHuiType] = useState('weekly');
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [memberMode, setMemberMode] = useState('auto'); // 'auto' | 'paste'
   const [autoShares, setAutoShares] = useState('');
   const [pasteText, setPasteText] = useState('');
@@ -171,12 +172,14 @@ export default function Dashboard({
         so_tien_ky: parsedAmount,
         loai_hui: huiType,
         tien_thao_moi_ky: parsedCommission,
+        ngay_bat_dau: startDate,
         hui_vien: members
       });
       // Reset form
       setName('');
       setAmount('');
       setCommission('');
+      setStartDate(new Date().toISOString().split('T')[0]);
       setAutoShares('');
       setPasteText('');
       setPastePreview('Phát hiện: 0 hội viên - Tổng cộng: 0 phần hụi');
@@ -251,7 +254,7 @@ export default function Dashboard({
     <>
       <header>
         <div className="header-info">
-          <h2>Chủ Thảo Cloud</h2>
+          <h2>Võ Ngọc Tùng</h2>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             Quản Lý Hụi <Coins className="icon-gold-glow" size={24} />
           </h1>
@@ -409,9 +412,16 @@ export default function Dashboard({
                         )}
                       </button>
                     </div>
-                    <div className="card-date-row">
-                      <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
-                      <span>Bắt đầu: {line.ngay_bat_dau}</span>
+                    <div className="card-date-row" style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start', margin: '4px 0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <Calendar size={12} />
+                        <span>Bắt đầu: {new Date(line.ngay_bat_dau).toLocaleDateString('vi-VN')}</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: '600' }}>
+                        {line.loai_hui === 'daily' && `🔄 Khui: Hàng ngày`}
+                        {line.loai_hui === 'weekly' && `🔄 Khui: Mỗi ${['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][new Date(line.ngay_bat_dau).getDay()]} hàng tuần`}
+                        {line.loai_hui === 'monthly' && `🔄 Khui: Ngày ${new Date(line.ngay_bat_dau).getDate()} hàng tháng`}
+                      </div>
                     </div>
                   </div>
                   <ChevronRight size={20} className="chevron" />
@@ -507,6 +517,24 @@ export default function Dashboard({
                     Tháng
                   </button>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Ngày mở dây hụi:</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  required
+                />
+                {startDate && (
+                  <div style={{ fontSize: '11px', color: 'var(--warning)', marginTop: '6px', fontWeight: '600' }}>
+                    {huiType === 'daily' && `Khui hụi: Hàng ngày từ ${new Date(startDate).toLocaleDateString('vi-VN')}`}
+                    {huiType === 'weekly' && `Khui hụi: Mỗi ${['Chủ nhật','Thứ 2','Thứ 3','Thứ 4','Thứ 5','Thứ 6','Thứ 7'][new Date(startDate).getDay()]} hàng tuần`}
+                    {huiType === 'monthly' && `Khui hụi: Ngày ${new Date(startDate).getDate()} hàng tháng`}
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
